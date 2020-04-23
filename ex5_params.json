@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    [
+      "genome_1",
+      "data/genome_1.fa",
+      "data/transcripts_a.fa"
+    ],
+    [
+      "genome_2",
+      "data/genome_2.fa",
+      "data/transcripts_b.fa"
+    ]
+  ]
+}
