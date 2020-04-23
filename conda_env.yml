@@ -1,0 +1,8 @@
+name: nfh
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.7
+  - blast=2.9.0
+  - nextflow=20.01.0
