@@ -20,10 +20,11 @@ process split_conf {
     conf_file_1 = "${conf_file}.1"
     conf_file_2 = "${conf_file}.2"
     """
-    sed 's/STAGES .*/STAGES                  :=${params.stages_first_run}/' $conf_file > $conf_file_1
-    sed 's/STAGES .*/STAGES                  :=${params.stages_second_run}/' $conf_file > $conf_file_2
+    sed 's/STAGES .*/STAGES                  := ${params.stages_first_run}/' $conf_file > $conf_file_1
+    sed 's/STAGES .*/STAGES                  := ${params.stages_second_run}/' $conf_file > $conf_file_2
+    sed -i 's/RUN_NUMBER .*/RUN_NUMBER                  := 2/' $conf_file_2
     """
-    //todo need to edit RUN_NUMBER in second file
+    //todo need increment RUN_NUMBER by one in second file
 }
 
 process run_denovomagic_part_1 {
@@ -41,6 +42,7 @@ process run_denovomagic_part_1 {
     """
     mv -f $conf_file_1 $conf_file
     cat $conf_file | grep "STAGES "
+    cat $conf_file | grep "RUN_NUMBER "
     """
 }
 
@@ -59,5 +61,6 @@ process run_denovomagic_part_2 {
     """
     mv -f $conf_file_2 $conf_file
     cat $conf_file | grep "STAGES "
+    cat $conf_file | grep "RUN_NUMBER "
     """
 }
