@@ -1,0 +1,1441 @@
+#########
+[GENERAL]
+#########
+
+#Will be used to describe the specific production run.
+DESCRIPTION 		:= Run DM2 pipeline from beginning to end on apple_3/apple, expected unique coverage peak is: 0, Running in DENOVO3 mode, Hetrozygote
+
+#List here all stages included in the pipeline and listed below.
+STAGES               	:= ERROR_CORRECTION:DEBRUIJN_GRAPH_ASSEMBLY:BELIEF_PROPAGATION:MAPPER_SE:CONSENSUS_FINDING:MAPPER_LINKS:LINKER:SCAFFOLDING:ORDERING:ORDERING_REFINING:UNPHASED_SIMULATED_CONSENSUS_FINDING:HAPLOID_LINKER:HAPLOID_SCAFFOLDING:HAPLOID_ORDERING:HAPLOID_ORDERING_REFINING:PHASER:POLISH:PHASED_POLISH:CHROMOSOMES_CONSTRUCT:PHASED_CHROMOSOMES_CONSTRUCT:CREATE_HTML_REPORT
+INITIAL_SUB_STAGE    	:= 1
+RUN_NUMBER           	:= 2
+BASED_ON             	:= NULL
+
+PIPELINE             	:= denovoMagic2
+ORGANISM             	:= apple
+VARIANT              	:= apple_3
+# REFERENCE_NAME is used when copying for s3. Most runs should have the value 'common' here.
+REFERENCE_NAME := common
+REFERENCE_GENOME := /projects/DM_Apple_Test/trim.GDDH13_1-1_formatted_modified_header_names_correct_sorted.fasta
+REFERENCE_GENOME_GRAPH_FOLDER := NA
+#PAN_GENOME_PREFIX is a prefix to .ContigInfo, .contig, .genome_map.tsv files of pan genome
+PAN_GENOME_PREFIX := NA
+#SPLIT_SCAFFOLDS_INPUT can be a numeric value >= 2, and this will cause the SplitChimericMaps and ChromsomesConstruct dbgasAlignRunner stages to be done in several parts, to save memory. Use NA for no splitting of scaffolds.
+SPLIT_SCAFFOLDS_INPUT := NA
+# A file describing chromosome sizes, (if reference is PAN_GENOME, reads sizes from PAN_GENOME_PREFIX.genomeSizes.txt instead)
+REF_CHR_SIZE_FILE       := /projects/DM_Apple_Test/trim.GDDH13_1-1_formatted_modified_header_names_correct_sorted.size
+OUTPUT_GENOME_NAME	:= apple_3__ver100
+IGV_REFERENCE_NAME	:= common
+
+#Will be used to describe the number of processors the pipeline will use. The stages that use this parameter share
+#memory and not duplicate it
+PARALLEL_PHASES      	:= 2
+MATLAB_PARALLEL_PHASES  := 1
+
+#Add host for running the computation (for example: compute02).
+COMPUTE_HOST         	:=
+DEBUG                	:= 0
+#Global flag - change to 0 if torque system is down or parallel run should not be run because of memory constraints for example.
+ALLOW_PARALLEL       	:= 1
+
+SOFTWARE_VERSION     	:= v2.11.0
+PARAMETERS_VERSION   	:= 0
+DENOVO-2_BIN_DIR	:= /DenovoMagic2
+PROJECT_ID              := nrq000
+# Legal values for ANALYSIS_METHOD: 'applied_reference_genome' or 'whole_genome_sequencing'.
+ANALYSIS_METHOD         := whole_genome_sequencing
+CUSTOMER_ID             := <name of the customer: stella/monica/kunefa>
+OUT_DIR_PREFIX       	:= /projects/DM_Apple_Test/prod
+
+OUT_DIR_SUFFIX       	:= {GENERAL::PIPELINE}_pipeline/{GENERAL::ORGANISM}/{GENERAL::VARIANT}/{GENERAL::SOFTWARE_VERSION}_P{GENERAL::PARAMETERS_VERSION}
+OUT_DIR              	:= {GENERAL::OUT_DIR_PREFIX}/{GENERAL::OUT_DIR_SUFFIX}
+RPP_SOFTWARE_VERSION    := {GENERAL::SOFTWARE_VERSION}
+RPP_PARAMETERS_VERSION  := 0
+RPP_FOLDER		:= {GENERAL::OUT_DIR_PREFIX}/readsPreProcessing_pipeline/{GENERAL::ORGANISM}/{GENERAL::VARIANT}/{GENERAL::RPP_SOFTWARE_VERSION}_P{GENERAL::RPP_PARAMETERS_VERSION}
+STREAM_LOGGER_PATH      := {GENERAL::DENOVO-2_BIN_DIR}/streamLogger.py
+# does data include TenX data. 0 or 1
+TEN_X                   := 1
+# We never use long reads without tenX
+LONG_READS              := 0
+
+LOG_FILE		:= {GENERAL::OUT_DIR}/log_file_pipeline_{GENERAL::RUN_NUMBER}
+
+#Boolean: 1 for sending notifications, 0 for not
+ENABLE_NOTIFICATIONS    := 0
+
+# This field currently does not work well, and is intended for future versions.
+# Currently, leave the value as UNLIMITED.
+MEMORY_LIMIT_GB := 5
+
+### S3 section (upload at the end of ChrConstruct)
+# 1 for true 0 for false
+UPLOAD_TO_S3            := 0
+S3_PATH_PREFIX          := < input s3 prefix here >
+###
+
+FINAL_OUTPUTS_DIR       := {GENERAL::OUT_DIR}/FinalOutputs
+
+
+#######
+[INPUT]
+#######
+#.tsv file containing T.B.D reads information
+READS_FILE_SE				:= {GENERAL::OUT_DIR}/{GENERAL::VARIANT}_DenovoMagic_reads_SE_CONF
+READS_FILE_MP				:= {GENERAL::OUT_DIR}/{GENERAL::VARIANT}_DenovoMagic_reads_MP_CONF
+READS_PRE_PROCESSING_INPUT_QA_DIR	:= {GENERAL::RPP_FOLDER}/ReadsPreProcessingHtml
+# full path to tenx_1.fq, tenx_2.fq and tenx_barcodes input files, respectively
+TEN_X_FIRST_FASTQ_FILE                  := /projects/DM_Apple_Test/prod/readsPreProcessing_pipeline/apple/apple_3/v2.11.0_P0/ReadsPreProcessing/tenX/Final_results/lib1_R1.fastq
+TEN_X_SECOND_FASTQ_FILE                 := /projects/DM_Apple_Test/prod/readsPreProcessing_pipeline/apple/apple_3/v2.11.0_P0/ReadsPreProcessing/tenX/Final_results/lib1_R2.fastq
+TEN_X_BARCODES_FILE                     := /projects/DM_Apple_Test/prod/readsPreProcessing_pipeline/apple/apple_3/v2.11.0_P0/ReadsPreProcessing/tenX/Final_results/lib1_barcodes.list.num
+LONG_READS_FILE                         := /projects/DM_Apple_Test/prod/readsPreProcessing_pipeline/apple/apple_3/v2.11.0_P0/ReadsPreProcessing/LR.fasta
+NAME_PREFIX             		:= {GENERAL::VARIANT}
+KMER                    		:= 127
+KMER_FOR_REFERENCE_COMPARISON		:= 63
+DBGAS_SLEEP_TIME        		:= 0.1
+
+##########
+[SOFTWARE]
+##########
+# Change prodslow to mnt for zadara runs and to efs for dnoc runs
+EXTERNAL_SOFTWARE_PREFIX := /mnt/software
+MCR					:= {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/MCR/v95
+BWA_PATH := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/bwa/0.7.3a/bin/bwa
+IGV_TOOLS_PATH := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/IGVTools/1.5.15/bin/igvtools
+DEBRUIJN_GRAPH_ASSEMBLY_TOOL    	:= /cBin/Release/DeBruijn2
+STATUS_UPDATING_SCRIPT          	:= /ITUtilities/cloud/pipeline/send_status_to_sns.sh
+HTML_SCRIPT     		        := /HTMLScripts/fromTsvToHtml.pl
+CREATE_KMER_SHMULIK_SCRIPT		:= /python/create_kmer_cov.py
+SAMTOOLS_PATH                           := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/samtools/samtools-1.9/samtools
+MINIMAP_PATH                            := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/minimap2/minimap2
+SSW_PATH                                := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/Complete-Striped-Smith-Waterman-Library/src/ssw_test
+RACON_PATH                              := {SOFTWARE::EXTERNAL_SOFTWARE_PREFIX}/racon/bin/racon
+PARSE_SAM_PATH                          := /cBin/Release/parse-sam
+
+
+##########################################################
+################### Stages Variables #####################
+##########################################################
+
+##################
+[ERROR_CORRECTION]
+##################
+ERROR_CORRECTION_SUFFIX                 := ErrorCorrection
+PROD_DIR                                := {GENERAL::OUT_DIR}/{ERROR_CORRECTION::ERROR_CORRECTION_SUFFIX}
+LOGS_DIR                                := {ERROR_CORRECTION::PROD_DIR}/logs
+QA_DIR					:= {ERROR_CORRECTION::PROD_DIR}/QA
+
+ERROR_CORRECTION_ITERATIONS_NUMBER      := 1
+ERROR_CORRECTION_READS_LIST_INPUT_FILE  := {INPUT::READS_FILE_SE}
+IN_FILES_PREFIX_PATH                    := {ERROR_CORRECTION::PROD_DIR}/inFiles
+CHECK_FILES_PREFIX_PATH                 := {ERROR_CORRECTION::PROD_DIR}/checkFiles
+OUT_FILES_PREFIX_PATH                   := {ERROR_CORRECTION::PROD_DIR}/outFile
+CONFIGURATION_PATH                      := {ERROR_CORRECTION::PROD_DIR}/mgr_config
+POST_PROCESSING_OUTPUT_FILE             := {ERROR_CORRECTION::PROD_DIR}/outputFilesstring
+NUM_OF_THREADS                          := {GENERAL::PARALLEL_PHASES}
+ERROR_CORRECTION_OUTPUT_SUFFIX		:= .cor.fasta
+ERROR_CORRECTION_KEY_WORD               := mgr
+
+#Configuration Parameters
+MIN_COUNT				:= 4
+KMER_SIZE_VEC				:= 128
+EXPAND_THRESHOLD			:= 0.9
+HASH_SIZE				:= 0.9
+N_EDGE_DIST				:= 5
+SAVE_PARTIAL				:= 1
+MAX_READ_LENGTH_VEC			:= 10000
+
+CREATE_CONFIGURATION_SCRIPT       	:= {GENERAL::DENOVO-2_BIN_DIR}/createErrorCorrectionConfigurationFile.pl
+CREATE_IN_FILES_SCRIPT                  := {GENERAL::DENOVO-2_BIN_DIR}/createErrorCorrectionFilesLists.pl
+CONCATENATE_FILES_SCRIPT       		:= {GENERAL::DENOVO-2_BIN_DIR}/concatenateErrorCorrectionOutFiles.pl
+
+#QA parametrs
+COLLECT_ERROR_CORRECTIONN_STATS_SCRIPT            := {GENERAL::DENOVO-2_BIN_DIR}/QA/collectErrorCorrectionStats.pl
+WRITE_ERROR_CORRECTION_PARAMS_SCRIPT              := {GENERAL::DENOVO-2_BIN_DIR}/QA/writeErrorCorrectionParams.pl
+LOGS_FILE_REGEX					  := _.cor.fasta.stats
+STATISTICS_OUT_PUT_FILE_NAME			  := {GENERAL::VARIANT}.ecQA
+ERROR_CORRECTION_HISTOGRAM_FILE_NAME_SUFFIX	  := .ec.hist
+ERROR_CORRECTION_COMBINED_HISTOGRAM_FILE_NAME     := {GENERAL::VARIANT}.AllHist
+HTML_OUTPUT_FILE				  := {ERROR_CORRECTION::QA_DIR}/{GENERAL::VARIANT}.ErrorCorrection.html
+OUTPUT_FILE_PARAMS_PREFIX			  := {ERROR_CORRECTION::QA_DIR}/ecParams
+ENABLE_NOTIFICATIONS				  := {GENERAL::ENABLE_NOTIFICATIONS}
+
+########################
+[DEBRUIJN_GRAPH_ASSEMBLY]
+########################
+DEBRUIJN_GRAPH_ASSEMBLY_SUFFIX		:= DBGAS
+PROD_DIR                                := {GENERAL::OUT_DIR}/{DEBRUIJN_GRAPH_ASSEMBLY::DEBRUIJN_GRAPH_ASSEMBLY_SUFFIX}
+KMER_PROD_DIR_PREFIX                    := {DEBRUIJN_GRAPH_ASSEMBLY::PROD_DIR}/{DEBRUIJN_GRAPH_ASSEMBLY::DEBRUIJN_GRAPH_ASSEMBLY_SUFFIX}_
+LOGS_DIR_SUFFIX				:= logs
+
+DEBRUIJN_GRAPH_ASSEMBLY_ITERATIONS_NUM   := 1
+READS_LIST_INPUT_FILE	  		:= {INPUT::READS_FILE_SE}
+
+DEBRUIJN_GRAPH_ASSEMBLY_BUILD_FILE	:= build
+DEBRUIJN_GRAPH_ASSEMBLY_PROPERTIES_FILE  := properties
+DEBRUIJN_GRAPH_ASSEMBLY_INPUT_FILES_LIST := files
+
+OUTPUT_FILE_NAME_PREFIX			:= {INPUT::NAME_PREFIX}
+INPUT_FILES_DIR                         := {ERROR_CORRECTION::PROD_DIR}
+NUMBER_OF_THREADS			:= {GENERAL::PARALLEL_PHASES}
+INPUT_FILES_NAMES_SUFFIX		:= {ERROR_CORRECTION::ERROR_CORRECTION_OUTPUT_SUFFIX}
+
+#Properties parameters
+KMERS_VEC				:= {INPUT::KMER}
+CFR_REPORT_EVERY			:= 1000000
+CONTIG_LENGTH_LIMIT			:= 2000000
+DBG_EXPAND_THREADS			:= 0
+DBG_HASH_SIZE				:= 0.9
+DBG_EXPAND_THRESHOLD			:= 0.9
+DBG_EXPAND_FACTOR			:= 1.4
+DBG_EXPAND_ENTRIES			:= 200000000
+SLICES					:= {GENERAL::PARALLEL_PHASES}
+NUM_OF_THREADS_RATIO                    := 0.8
+G_MIN_EDGE_COVERAGE			:= 0
+G_MIN_EDGE_CONTIG_BREAKUP		:= 0
+RESIZE_TO_ON_LOAD			:= 0.8
+# value should be >1 for slice splitting (when there is memory consumption problem)
+SLICE_SPILITTING			:= 1
+# 0=normal, 1=lowmem-nocoverage, 2=lowmem
+LM_MODE					:= 0
+LM_TABLE_SIZE				:= 0.9
+LM_TABLE_COUNT				:= 4
+LM_LOAD_THREAD_LIMIT			:= 12
+LM_RESIZE_TO_ON_LOAD			:= 4
+# NA means don't load graph. Any other value is folder to load graph from. This parameter is ignored when SLICE_SPLITTING > 1
+FCP_LOAD_GRAPH_FOLDER				:= NA
+FCP_LIMIT_THREADS			:= {GENERAL::PARALLEL_PHASES}
+
+CREATE_BUILD_SCRIPT                     := {GENERAL::DENOVO-2_BIN_DIR}/createDBGASBuildFile.pl
+CREATE_PROPERTIES_SCRIPT       		:= {GENERAL::DENOVO-2_BIN_DIR}/createDBGASPropertiesFile.pl
+CREATE_INFILES_LIST_SCRIPT              := {GENERAL::DENOVO-2_BIN_DIR}/createDBGASInputFilesList.pl
+WRAPPER_SCRIPT       			:= /Utilities/qsubFromSpecificDir.pl
+CHECK_FILE_EXISTS_GENERAL_SCRIPT      	:= /Denovo/checkFileExists.pl
+
+OUTPUT_FILE_PARAMS_PREFIX               := {DEBRUIJN_GRAPH_ASSEMBLY::PROD_DIR}/dbgasParams
+WRITE_DBGAS_PARAMS_SCRIPT               := {GENERAL::DENOVO-2_BIN_DIR}/QA/writeDBGASParams.pl
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+####################
+[BELIEF_PROPAGATION]
+####################
+BELIEF_PROPAGATION_SUFFIX               := BeliefPropagation
+PROD_DIR                                := {GENERAL::OUT_DIR}/{BELIEF_PROPAGATION::BELIEF_PROPAGATION_SUFFIX}
+LOGS_DIR				:= {BELIEF_PROPAGATION::PROD_DIR}/logs
+QA_DIR					:= {BELIEF_PROPAGATION::PROD_DIR}/QA
+
+BELIEF_PROPAGATION_SCRIPT       	:= /matlabBin/run_createUV.sh
+LINEARIZATION_INTERMEDIATE_STEP_KEYWORD := dbc
+LINEARIZATION_PART_2_SCRIPT             := /matlabBin/run_createUV_part2.sh
+CONFIGURATION_FILE_PATH                 := {BELIEF_PROPAGATION::PROD_DIR}/bp_config
+DB_DIR_SUFFIX				:= {DEBRUIJN_GRAPH_ASSEMBLY::KMERS_VEC}
+DB_FILES_PREFIX				:= {INPUT::NAME_PREFIX}
+DB_PRE					:= {DEBRUIJN_GRAPH_ASSEMBLY::KMER_PROD_DIR_PREFIX}
+OUTPUT_PRE				:= {BELIEF_PROPAGATION::PROD_DIR}/{INPUT::NAME_PREFIX}_bp
+KMER_LENGTH				:= {INPUT::KMER}
+# 1 for true 0 for not
+DBGAS_FORMAT_FLAG			:= 1
+CUTOFF					:= 0
+TIP_LEN_CUTOFF				:= {INPUT::KMER}
+UPDATE_SPEED				:= 100
+LENGTH_BENEFIT				:= 100
+EPSILON_UPDATE				:= 1.3
+FINAL_EPSILON				:= 2.51
+MIN_PEAK_LOOKUP				:= 27
+MAX_PEAK_LOOKUP				:= 49
+DIST_RATIO				:= 0.35
+LOOP_END_RATIO				:= 0.15
+LOOP_START				:= -14
+ARCS_COVERAGE_CUTOFF			:= 1
+SQUEEZE_BUBBLES_COV_RATIO		:= 0
+UNIQUE_RATIO_FILTER                     := 1.6
+ALWAYS_KEEP_CVG				:= 7
+#Flag: 0 for don't write the parameter in the configuration, 1 for write
+SKIP_BELIEF_PROPAGATION			:= 0
+#Flag: 0 for don't write the parameter in the configuration, 1 for write
+PARTIAL_BELIEF_PROPAGATION		:= 0
+#Split contigs larger than this size. 0 mark non split, important for runs with tenX data.
+MIN_SPLIT_SIZE                          := 1128
+
+CREATE_CONFIGURATION_SCRIPT                     := {GENERAL::DENOVO-2_BIN_DIR}/createBeliefPropagationConfiguration.pl
+COLLECT_COVERAGE_STATISTICS_SCRIPT      	:= {GENERAL::DENOVO-2_BIN_DIR}/QA/collectCoverageStats.pl
+DBGAS_HISTOGRAM_OUT_FILE			:= {BELIEF_PROPAGATION::QA_DIR}/dbgasContigCoverage.hist.tsv
+BELIEF_PROPAGATION_HISTOGRAM_OUT_FILE		:= {BELIEF_PROPAGATION::QA_DIR}/bpContigCoverage.tsv
+HIST_FILES_PATH_PREFIX				:= {BELIEF_PROPAGATION::QA_DIR}/hist
+DBGAS_HTML_OUTPUT_FILE                          := {BELIEF_PROPAGATION::QA_DIR}/{GENERAL::VARIANT}.DBGAS.html
+BP_HTML_OUTPUT_FILE				:= {BELIEF_PROPAGATION::QA_DIR}/{GENERAL::VARIANT}.BeliefPropagation.html
+
+DBGAS_OUTPUT_FILE_PARAMS		        := {DEBRUIJN_GRAPH_ASSEMBLY::OUTPUT_FILE_PARAMS_PREFIX}
+BP_OUTPUT_FILE_PARAMS			        := {DEBRUIJN_GRAPH_ASSEMBLY::PROD_DIR}/bpParams
+WRITE_BELIEF_PROPAGATION_PARAMS_SCRIPT          := {GENERAL::DENOVO-2_BIN_DIR}/QA/writeBPParams.pl
+ENABLE_NOTIFICATIONS                            := {GENERAL::ENABLE_NOTIFICATIONS}
+
+# Change to 1(true) for heterozygous/tenx lines
+DO_LINEARIZATION                         := 1
+# 1 for homozygous, 2 for heterozygous, 3 for e.g. banana, etc.
+HET_LEVEL                                := 2
+LINEARIZE_ALL                            := 0
+
+###########
+[MAPPER_SE]
+###########
+MAPPER_SE_SUFFIX               		:= Mapper_SE
+PROD_DIR                                := {GENERAL::OUT_DIR}/{MAPPER_SE::MAPPER_SE_SUFFIX}
+LOGS_DIR				:= {MAPPER_SE::PROD_DIR}/logs
+
+MAPPER_MAIN_SCRIPT              	:= /cBin/Release/mapper_large_kmer
+ADD_CONTIG_LENGTH_EXECUTABLE             := /cBin/Release/add_contig_length
+INPUT_READS_LIST_FILE_NAME              := {MAPPER_SE::PROD_DIR}/lib1_files
+READS_CONF                              := {INPUT::READS_FILE_SE}
+READS_FILES_DIR                         := {ERROR_CORRECTION::PROD_DIR}
+READS_FILES_NAME_SUFFIX 		:= {ERROR_CORRECTION::ERROR_CORRECTION_OUTPUT_SUFFIX}
+INPUT_FROM_BELIEF_PROPAGATION		:= {BELIEF_PROPAGATION::OUTPUT_PRE}
+MAPPER_OUTPUT_FILE                      := lib1.map
+MAPPER_KMER				:= {INPUT::KMER}
+MINIMAL_MAP_LEN				:= 1
+MINIMAL_COVERAGE			:= 1
+CUT_OFF					:= 1
+#Flag: 0 for no memory issue 1 for yes
+LOW_MEMORY_CONSUMPTION_FLAG		:= 0
+NUMBER_OF_THREADS			:= {GENERAL::PARALLEL_PHASES}
+KMER_BUFFER_SIZE                        := 100000000
+
+TEN_X                                   := {GENERAL::TEN_X}
+TEN_X_ONLY                              := 0
+
+CREATE_MAPPER_SE_READS_FILE_SCRIPT              := {GENERAL::DENOVO-2_BIN_DIR}/createMapperSEReadsFile.pl
+CREATE_TEN_X_RAW_DATA_PROCESSING_CONFIGURATION_SCRIPT	:= {GENERAL::DENOVO-2_BIN_DIR}/createTenXRawDataProcessingConfiguration.py
+CREATE_TEN_X_MAPPER_FILES_FILE_SCRIPT	          := {GENERAL::DENOVO-2_BIN_DIR}/createTenXMapperFilesFile.py
+TEN_X_RAW_DATA_PROCESSING_SCRIPT              := /matlabBin/run_tenX_raw_data_processing.sh
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+TEN_X_RAW_DATA_PROCESSING_CONFIGURATION_FILE   := ten_x_raw_data_processing_configuration.m
+TEN_X_TMP_MAPPER_FILES_FILE              := ten_x_mapper_files
+TEN_X_TMP_MAP_FILE                       := map_file
+TEN_X_MAP_FILE_MATLAB                    := map_file_matlab
+TEN_X_FIRST_FASTQ_FILE                   := {INPUT::TEN_X_FIRST_FASTQ_FILE}
+TEN_X_SECOND_FASTQ_FILE                  := {INPUT::TEN_X_SECOND_FASTQ_FILE}
+TEN_X_BARCODES_FILE                      := {INPUT::TEN_X_BARCODES_FILE}
+TEN_X_MAPPER_KMER                        := 128
+TEN_X_MAPPER_KMER_BUFFER_SIZE            := 100000000
+TEN_X_HASHING_FREQUENCY                  := 1
+TEN_X_MAX_NUMBER_OF_BARCODES             := 15000000
+TEN_X_MIN_READS_NUM_IN_BARCODE           := 3
+TEN_X_MAX_READS_NUM_IN_BARCODE           := 15000
+TEN_X_MIN_CONTIGS_NUM_IN_BARCODE         := 1
+TEN_X_MAX_CONTIGS_NUM_IN_BARCODE         := 5000
+TEN_X_MATLAB_NUM_THREADS                 := {GENERAL::MATLAB_PARALLEL_PHASES}
+TEN_X_OUTPUT_PREFIX                      := phasing
+MAPPER_SE_TEN_X_OUTPUT                   := {MAPPER_SE::PROD_DIR}/{MAPPER_SE::TEN_X_OUTPUT_PREFIX}
+
+###################
+[CONSENSUS_FINDING]
+###################
+CONSENSUS_FINDING_SUFFIX   		:= ConsensusFinding
+PROD_DIR				:= {GENERAL::OUT_DIR}/{CONSENSUS_FINDING::CONSENSUS_FINDING_SUFFIX}
+LOGS_DIR                                := {CONSENSUS_FINDING::PROD_DIR}/logs
+QA_DIR					:= {CONSENSUS_FINDING::PROD_DIR}/QA
+
+CONSENSUS_FINDING_KEY_WORD		:= cses
+CONFIGURATION_FILE_PATH			:= {CONSENSUS_FINDING::PROD_DIR}/cses_configuration
+
+#Config Parameters
+DBG_PRE					:= {BELIEF_PROPAGATION::OUTPUT_PRE}
+MAPPER_FILE				:= {MAPPER_SE::PROD_DIR}/{MAPPER_SE::MAPPER_OUTPUT_FILE}
+OUT_PRE					:= {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+KMER_SIZE				:= {INPUT::KMER}
+QA_MIN_COV                              := 1
+QA_MAX_COV                              := 3
+QA_USE_JUNCTION                         := 1
+UV_MIN_COVERAGE				:= 1
+UV_MAX_COVERAGE				:= 3
+UV_MIN_COVERAGE_PERFECT			:= 2
+UV_MAX_COVERAGE_PERFECT			:= 2
+ABOVE_KMER_FOR_PERFERCT_UNIQ		:= 0
+UV_MAX_COVERAGE_EVENIF_PERFECT_CONSENSUS:= 3
+MIN_SUP					:= 2
+MIN_OTHERS_TO_DISQUALIFY		:= 2
+MIN_ACCEPTANCE_RATIO			:= 0.795
+MIN_CON_LEN				:= 15
+REPORT_EVERY				:= 10000000
+LINEARIZATION_MODE			:= 2
+SUPPORT_SIZE				:= 300
+#Flag: 0 for skipping the writing of unnecessary files
+WRITE_ALL_FILES				:= 0
+LEN_ABOVE_PERFECT                       := 1000
+# 0 for homozygote, ~40 for heterozygotes, smaller if heterozygocity is strong
+HOMOLOGOUS_KMER                         := 40
+
+CREATE_CONFIGURATION_SCRIPT       := {GENERAL::DENOVO-2_BIN_DIR}/createConsensusFindingConfiguration.pl
+CREATE_HISTOGRAMS_SCRIPT          := {GENERAL::DENOVO-2_BIN_DIR}/QA/createConsensusFindingHistograms.pl
+CREATE_CONTIGS_DISTRIBUTIONS_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/QA/createConsensusFindingContigsDistribution.pl
+ADD_PIE_TO_HTML_SCRIPT                   := /HTMLScripts/addPieObjectsToHtml.pl
+OUTPUT_FILE_PARAMS                       := {CONSENSUS_FINDING::PROD_DIR}/csesParams
+HIST_FILES_PATH_PREFIX                   := {CONSENSUS_FINDING::QA_DIR}/hist
+SHORT_CONTIGS_HISTOGRAM_OUTPUT_FILE_PATH := {CONSENSUS_FINDING::QA_DIR}/shortContigs.tsv
+LONG_CONTIGS_HISTOGRAM_OUTPUT_FILE_PATH  := {CONSENSUS_FINDING::QA_DIR}/longContigs.tsv
+CONSENSUS_FINDING_HTML_OUTPUT_FILE       := {CONSENSUS_FINDING::QA_DIR}/{GENERAL::VARIANT}.ConsensusFinding.html
+CONTIG_DISTRIBUTION_OUTPUT_FILE          := {CONSENSUS_FINDING::QA_DIR}/contigs.csv
+UNIQUE_CONTIG_DISTRIBUTION_OUTPUT_FILE   := {CONSENSUS_FINDING::QA_DIR}/uniquesContigs.csv
+ENABLE_NOTIFICATIONS                     := {GENERAL::ENABLE_NOTIFICATIONS}
+
+TEN_X                                   := {GENERAL::TEN_X}
+
+CREATE_TEN_X_CONSENSUS_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createTenXConsensusConfiguration.py
+CREATE_TEN_X_QA_UNIQUE_STATUS_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createTenXQAUniqueStatusConfiguration.py
+TEN_X_QA_UNIQUE_STATUS_SCRIPT            := /matlabBin/run_tenX_QA_unique_status.sh
+TEN_X_QA_UNIQUE_STATUS_CONFIGURATION_FILE := tenXQAUniqueStatus.conf
+TEN_X_CONSENSUS_CONFIGURATION_FILE       := tenXConsensus.properties
+TEN_X_CONSENSUS_KEYWORD                  := ls
+TEN_X_NUM_THREADS                        := {GENERAL::PARALLEL_PHASES}
+TEN_X_ADD_TIPS_ARCS                      := 0
+TEN_X_MIN_NUM_BARCODES_FOR_CONTIG        := 1
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG        := 1500
+TEN_X_MAX_LINK_DIST                      := 20000
+TEN_X_MAX_DEPTH                          := 4
+TEN_X_MIN_ACCEPT_RATIO                   := 0.8
+TEN_X_MIN_ACCEPT_COUNT                   := 2
+TEN_X_MAX_CONNECTIONS                    := 4
+# 0 represents no limit
+TEN_X_MAX_SCAF_CONNECTIONS               := 0
+TEN_X_MAX_LOOPS                          := 5
+TEN_X_MOL_SIZE                           := 10000
+TEN_X_SECOND_CHANCE_INV_PROB             := 1000
+TEN_X_PEAK_PRECENTAGE                    := 0.9
+TEN_X_HIT_PROB_REDUCE_FACTOR             := 0.5
+TEN_X_BOUND43_COMMON_BARCODES            := 10
+TEN_X_NOISE_REDUCTION_AMOUNT             := 1000
+TEN_X_BUBBLE_COAPPEAR_THRESHOLD          := 3
+TEN_X_MAX_APPS_VAL                       := 5
+TEN_X_MATLAB_NUM_THREADS                 := {GENERAL::MATLAB_PARALLEL_PHASES}
+TEN_X_OUTPUT_PREFIX                      := phasing
+TEN_X_MAP_FILE_MATLAB                    := {MAPPER_SE::PROD_DIR}/{MAPPER_SE::TEN_X_MAP_FILE_MATLAB}
+MAPPER_SE_TEN_X_OUTPUT                   := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+HOMOLOGOUS_FILE                          := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}.homologous
+
+
+##############
+[MAPPER_LINKS]
+##############
+MAPPER_LINKS_SUFFIX                     := Mapper_Links
+PROD_DIR                                := {GENERAL::OUT_DIR}/{MAPPER_LINKS::MAPPER_LINKS_SUFFIX}
+LOGS_DIR                                := {MAPPER_LINKS::PROD_DIR}/logs
+
+READS_CONF				:= {INPUT::READS_FILE_MP}
+
+LARGE_KMER_MAPPER_MAIN_SCRIPT           := /cBin/Release/mapper_large_kmer
+SMALL_KMER_MAPPER_MAIN_SCRIPT           := /cBin/Release/mapper
+#Option to run mapper/mapper_large_kmer from specific <library-type>_<kmer-size> (<library-type>_<kmer-size> is a key which presents the all libraries with the same type and same kmer)
+KMER_TO_START_FROM_IN_MAIN		:= NA
+INPUT_READS_LIST_FILE_NAME_SUFFIX       := files
+ERROR_CORRECTION_DIR			:= {ERROR_CORRECTION::PROD_DIR}
+READS_FILES_NAME_SUFFIX                 := {ERROR_CORRECTION::ERROR_CORRECTION_OUTPUT_SUFFIX}
+INPUT_FROM_CONSENSUS_FINDING            := {CONSENSUS_FINDING::OUT_PRE}
+MAPPER_OUTPUT_FILE_SUFFIX               := .map
+MINIMAL_MAP_LEN                         := 64
+MINIMAL_COVERAGE                        := 1
+CUT_OFF                                 := 1
+#HASHING_FREQUENCY = 1 if we do not have memory issues else user will define
+HASHING_FREQUENCY			:= 1
+DBGAS_FINAL_KMER                        := {INPUT::KMER}
+NUMBER_OF_THREADS                       := {GENERAL::PARALLEL_PHASES}
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+KMER_BUFFER_SIZE                        := 100000000
+
+TEN_X                                   := {GENERAL::TEN_X}
+
+########
+[LINKER]
+########
+LINKER_DIR_SUFFIX			:= Linker
+PROD_DIR                                := {GENERAL::OUT_DIR}/{LINKER::LINKER_DIR_SUFFIX}
+LOGS_DIR                                := {LINKER::PROD_DIR}/logs
+QA_DIR					:= {LINKER::PROD_DIR}/QA
+
+LINKER_SCRIPT                           := /cBin/Release/linker
+NAME_PREFIX 				:= {INPUT::NAME_PREFIX}
+MAPPER_LINKS_INPUT_DIR                  := {MAPPER_LINKS::PROD_DIR}
+MAPPER_OUTPUT_FILE_SUFFIX		:= {MAPPER_LINKS::MAPPER_OUTPUT_FILE_SUFFIX}
+LINKER_INPUT_FILES_PREFIX               := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+LINKER_OUTPUT_FILES_SUFFIX		:= .links
+LINKS_FILE				:= {LINKER::PROD_DIR}/{INPUT::NAME_PREFIX}{LINKER::LINKER_OUTPUT_FILES_SUFFIX}
+READS_CONF				:= {INPUT::READS_FILE_MP}
+KMER_SIZE				:= {INPUT::KMER}
+FORBIDDEN_INSERT_SIZE_FILE              := {LINKER::PROD_DIR}/forbiddenInsertSize.txt
+REMOVE_DUPLICATES			:= 1
+
+CREATE_PHASING_FILE_SCRIPT              := {GENERAL::DENOVO-2_BIN_DIR}/createPhasingFile.pl
+PHASING_FILE_PATH                       := {LINKER::PROD_DIR}/phasingSummary.txt
+#QA Parameters
+PARAMETERS_FILE_FOR_QA			:= {LINKER::PROD_DIR}/parameterForQA.txt
+COLLECT_LINKER_STATS_SCRIPT             := {GENERAL::DENOVO-2_BIN_DIR}/QA/collectLinksStats.pl
+STATISTICS_OUTPUT_FILE_NAME             := {LINKER::QA_DIR}/{GENERAL::VARIANT}.linkerQA
+CREATE_HISTOGRAM_SCRIPT			:= {GENERAL::DENOVO-2_BIN_DIR}/QA/createLinksHistograms.pl
+INPUT_STATS_FILES_NAMES_SUFFIX          := .links.stats
+HISTOGRAM_FILE_NAME_SUFFIX		:= .hist
+LINKER_SE_LIBS_HISTOGRAM_OUT_FILE       := {LINKER::QA_DIR}/SE_histogram.tsv
+LINKER_MP_LIBS_HISTOGRAM_OUT_FILE	:= {LINKER::QA_DIR}/MP_histogram.tsv
+HTML_OUTPUT_FILE                        := {LINKER::QA_DIR}/{GENERAL::VARIANT}.Linker.html
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+RUN_LINKS_AMPLIFICATION                 := 1
+CREATE_LINKS_AMPLIFICATION_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createLinksAmplificationConfiguration.py
+LINKS_AMPLIFICATION_CONFIGURATION_FILE  := links_amplification.properties
+MAX_HOMO_APPS                           := 5
+MAX_SCORE                               := 4
+MOL_SIZE                                := {CONSENSUS_FINDING::TEN_X_MOL_SIZE}
+SECOND_CHANCE_INV_PROB                  := {CONSENSUS_FINDING::TEN_X_SECOND_CHANCE_INV_PROB}
+PEAK_PRECENTAGE                         := {CONSENSUS_FINDING::TEN_X_PEAK_PRECENTAGE}
+HIT_PROB_REDUCE_FACTOR                  := {CONSENSUS_FINDING::TEN_X_HIT_PROB_REDUCE_FACTOR}
+BOUND43_COMMON_BARCODES                 := {CONSENSUS_FINDING::TEN_X_BOUND43_COMMON_BARCODES}
+NOISE_REDUCTION_AMOUNT                  := {CONSENSUS_FINDING::TEN_X_NOISE_REDUCTION_AMOUNT}
+HASH_SIZE                               := 1000000007
+UNIQUES_AMPLIFY                         := 1.4
+HOMO2DIP_AMPLIFY                        := 1.4
+HOMO2HOMO_AMPLIFY                       := 0.8
+HOMOLOGOUS_AMPLIFY                      := 0.6
+HOMOS_INSERT_BOUND                      := 5
+HOMOLOGOUS_INSERT_BOUND                 := 1
+HOMOLOGOUS_CVG_BOUND                    := 10
+HOMOLOGOUS_FILTER_BOUND                 := 0.3
+NEG_LINK_BOUND                          := -800
+AMP_NO_LINKER                           := 1
+FAST_MODE                               := 0
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG       := {CONSENSUS_FINDING::TEN_X_MAX_NUM_BARCODES_FOR_CONTIG}
+LINKS_AMPLIFICATION_KEYWORD             := la
+MAPPER_SE_TEN_X_OUTPUT                  := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+NUM_THREADS                             := {GENERAL::PARALLEL_PHASES}
+
+TEN_X                                   := {GENERAL::TEN_X}
+
+#############
+[SCAFFOLDING]
+#############
+SCAFFOLDING_DIR_SUFFIX			:= Scaffolding
+PROD_DIR                                := {GENERAL::OUT_DIR}/{SCAFFOLDING::SCAFFOLDING_DIR_SUFFIX}
+LOGS_DIR				:= {SCAFFOLDING::PROD_DIR}/logs
+
+SCAFFOLDING_CONFIGURATION		:= {SCAFFOLDING::PROD_DIR}/ls_configuration
+
+#Configuration Params
+CON_PRE					:= {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+LINKS_FILE				:= {LINKER::LINKS_FILE}
+MATLAB_OUT_PRE				:= {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+KMER_SIZE				:= {INPUT::KMER}
+NUM_THREADS				:= {GENERAL::PARALLEL_PHASES}
+MIN_LINK_COUNT				:= 1
+MIN_LINK_DIST				:= -1000
+MAX_DEPTH				:= 7
+MIN_ACCEPT_COUNT			:= 5
+MAX_CONNECTIONS                         := 7000
+# 0 represents no limit
+MAX_SCAF_CONNECTIONS                    := 7000
+MIN_ACCEPT_RATIO			:= 0.795
+GOOD_COUNT_TRY				:= 8
+MAX_LOOPS				:= 8
+MAX_LINK_DIST				:= 3800
+INSERT_JUMP  				:= AUTO_CALCULATION
+# 1 is ceating the graph from links, 0 is making a complete graph, 2 is both modes, 3 is running a dummy run
+CREATE_GRAPH_FROM_LINKS			:= 2
+LR_CREATE_GRAPH_FROM_LINKS              := 1
+ADD_TIPS_ARC				:= 0
+#Flag: default is 0
+ADD_TIPS_LINKS                          := 0
+#Flag: default is 1
+FIND_ALTERNATIVE			:= 1
+PHASHING_FILE				:= {LINKER::PHASING_FILE_PATH}
+
+SCAF_TO_ORD_SCRIPT                      := /matlabBin/run_scaf2ord_main.sh
+SCAF_TO_ORD_CONFIGURATION_FILE          := {SCAFFOLDING::PROD_DIR}/scaf2ord_config
+SCAF_TO_ORD_INPUT_FILES                 := {SCAFFOLDING::MATLAB_OUT_PRE}
+SCAF_TO_ORD_OUTPUT_FILES                := {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SCAF_TO_ORD_SOAP_FILES_PREFIX           := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SCAF_TO_ORD_KMER_SIZE                   := {INPUT::KMER}
+
+CREATE_SCAFFOLDING_CONF_SCRIPT		:= {GENERAL::DENOVO-2_BIN_DIR}/createScaffoldingConfiguration.pl
+CREATE_CONFIGURATION_SCRIPT		:= {GENERAL::DENOVO-2_BIN_DIR}/createScafToOrdConfiguration.pl
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+CREATE_LINKS_SCRIPT                     := /DenovoMagic2/lrScaffolding.py
+OUT_LINKS_FILE                          := {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}{LINKER::LINKER_OUTPUT_FILES_SUFFIX}
+PHASING_FILE_PATH                       := {SCAFFOLDING::PROD_DIR}/phasingSummary.txt
+LONG_READS                              := {GENERAL::LONG_READS}
+LONG_READS_FILE                         := {INPUT::LONG_READS_FILE}
+INDEX_FOLDER                            := {SCAFFOLDING::PROD_DIR}/longReadsProcessing
+SAMTOOLS                                := {SOFTWARE::SAMTOOLS_PATH}
+PARSE_SAM                               := {SOFTWARE::PARSE_SAM_PATH}
+MINI_MAP_TOOL                           := {SOFTWARE::MINIMAP_PATH}
+# "_" replaces" -"
+MINI_MAP_FLAGS                          := _a_k15_w5_K50M_I100G_p0.1_N1000__end-bonus=100
+# minimum mapping score to take
+MIN_SCORE                               := 0.65
+# phase in ordering where the long reads links begin, use 1 if there are no MP
+LONG_READS_PHASE                        := 0
+# Flag, use multiplication of TENX*long reads links, switch to 1 when there are no MP
+MULT_MODE                               := 0
+# Used only if there are long reads also
+MAPPER_SE_TEN_X_OUTPUT                  := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}.contigs2barcodes
+# Index for the first command to be executed in the long reads links created python script 
+FIRST_COMMAND                           := 0
+
+##########
+[ORDERING]
+##########
+ORDERING_DIR_SUFFIX                  	:= Ordering
+PROD_DIR                                := {GENERAL::OUT_DIR}/{ORDERING::ORDERING_DIR_SUFFIX}
+LOGS_DIR                                := {ORDERING::PROD_DIR}/logs
+
+ORDERING_MAIN_SCRIPT			:= /matlabBin/run_ordering_main.sh
+
+SOAP_FILE_PREFIX			:= {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+KMER_LENGTH				:= {INPUT::KMER}
+LINKS_FILE				:= {SCAFFOLDING::OUT_LINKS_FILE}
+#boolean 1/0
+RESUME_PARAM				:= 0
+RESUME_FILE				:= NA
+SCAFFOLDING_OUT_FILE			:= {SCAFFOLDING::SCAF_TO_ORD_OUTPUT_FILES}_1_1.scafdata.mat
+#boolean 1/0
+REPLACE_LENS				:= 0
+# list of sizes we want to replace
+LENS_REPLACED				:= NA
+# same size as the previous with the new lengths of the links libs.same size as the previous with the new lengths of the links libs.
+NEW_LENS				:= NA
+SCAFF_LEN_CUTOFF			:= {INPUT::KMER}
+OUTPUT_PREFIX				:= {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}
+#boolean 1/0
+FILT_UN_FILT_LIBRARY_PAIRS		:= 1
+#boolean 1/0
+LOAD_UV					:= 0
+# name of file of the unique vector
+UV_FILE					:= NA
+ADD_TIPS_CUTOFF				:= 75000
+MIN_ARC_COV				:= 2
+MUST_BE_UNIQUE_LENGTH			:= 100000
+#boolean 1/0
+USE_CVG					:= 0
+# number of ordering phases
+N_PHASES				:= 3
+MIN_PE_COV				:= 2
+TAKE_NO_LINKER_MATE_DIST_FROM_SCAFOLD_EDGE := 870
+NEG_LINKS_BOUND				:= 0
+NEG_LINKS_PREC				:= 0.4
+NO_SUP					:= 0
+#boolean 1/0
+DISCARD_LINKS_BETWEEN_NON_UNIQUES       := 0
+LOW_COV_PE				:= 2,2,1
+PHASE_PE_COV				:= 6,6,2
+TAKE_LINK_RATIO                         := 30,30,20
+MIN_TAKE_LINK				:= 10,10,2
+N_CPUS					:= 1
+MIN_SEED_SIZE				:= 0
+#boolean 1/0
+BRIDGE_GAPS 				:= 0
+UNORD_SCAF_DIR				:= {SCAFFOLDING::PROD_DIR}
+UNORD_PREFIX				:= {INPUT::NAME_PREFIX}
+PHASING_FILE				:= {SCAFFOLDING::PHASING_FILE_PATH}
+ORDERING_CONFIGURATION_FILE		:= {ORDERING::PROD_DIR}/ordering_config
+
+CREATE_CONFIGURATION_SCRIPT		:= {GENERAL::DENOVO-2_BIN_DIR}/createOrderingConfiguration.sh
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+TEN_X                                   := {GENERAL::TEN_X}
+TEN_X_ONLY                              := 0
+
+CREATE_TEN_X_ORDERING_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createTenXOrderingConfiguration.py
+TEN_X_ORDERING_CONFIGURATION_FILE       := ten_x_ordering.conf
+TEN_X_ORDERING_SCRIPT                   := /matlabBin/run_tenX_final_ordering.sh
+MAPPER_SE_TEN_X_OUTPUT                  := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+TEN_X_UNIQUE_APPS_VAL                   := 2
+TEN_X_SUP_CONTIG_WIN                    := 200
+MAX_TEN_X_MOL_LEN                       := 200000
+TEN_X_CONTIG_LEN_JUMP                   := 6000
+TEN_X_MIN_ORDER_SCAF_LEN                := 3000
+TEN_X_GAP                               := 10000
+TEN_X_IS_ENFORCE_ORDERING_CONNECTION    := 0
+TEN_X_SINGLE_LINK_TH                    := 1000000
+TEN_X_MUT_LINK_TH                       := 2
+TEN_X_LARGEMAT_DUP_TH                   := 1
+TEN_X_LARGEMAT_DUP_BLOCK                := 100000
+TEN_X_BUBBLE_COAPPEAR_TH                := 4
+TEN_X_MAX_APPS_VAL                      := 1000
+TEN_X_MIN_CONTIG_COAPPEAR               := 4
+TEN_X_MATLAB_NUM_THREADS                := {GENERAL::MATLAB_PARALLEL_PHASES}
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG       := {CONSENSUS_FINDING::TEN_X_MAX_NUM_BARCODES_FOR_CONTIG}
+TEN_X_ORDERING_EDGE_LEN_FACTOR                          := 2
+TEN_X_ORDERING_MINIMAL_SCAFS_LEN_FOR_SECOND_ORDERING    := 10000
+TEN_X_ORDERING_IS_SECOND_ORDERING                       := 0
+TEN_X_ORDERING_IS_FILTER_LINKS_BETWEEN_HOM_SCAFFOLDS    := {CONSENSUS_FINDING::HOMOLOGOUS_KMER}
+TEN_X_ORDERING_HOM_SCAFFOLD_FILENAME                    := NA
+# Value of 1 (or above) means no breaking scaffolds according to tenX, the lower the value, the more breaks will occur, normal value is 0.0002
+TEN_X_QA_MIN_PVAL                                       := AUTO_CALCULATION
+
+###################
+[ORDERING_REFINING]
+###################
+ORDERING_REFINING_DIR_SUFFIX                := OrderingRefining
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{ORDERING_REFINING::ORDERING_REFINING_DIR_SUFFIX}
+LOGS_DIR                                    := {ORDERING_REFINING::PROD_DIR}/logs
+QA_DIR					    := {ORDERING_REFINING::PROD_DIR}/QA
+# REFERENCE_INPUT is one of REFERENCE_GENOME | REFERENCE_GENOME_GRAPH_FOLDER
+REFERENCE_INPUT := {GENERAL::REFERENCE_GENOME}
+# REFERENCE_TYPE is one of graphFolder (for REFERENCE_GENOME_GRAPH_FOLDER) | fasta (for REFERENCE_GENOME) | offset (for REFERENCE_GENOME)
+REFERENCE_TYPE := fasta
+OUT_PREF			            := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SOAP_FILE_PATH_PREFIX                       := {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+ORDERING_CONFIGURATION_FILE                 := {ORDERING::ORDERING_CONFIGURATION_FILE}
+SCAFF_OUTPUT_FILE_PATH                      := {ORDERING::SCAFFOLDING_OUT_FILE}
+CONVERT_ORDERING_OUTPUT_PREFIX              := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.in
+CONVERT_ORDERING_OUTPUT_SCRIPT              := /Ordering/convertOrderingOutput.py
+CONVERT_ORDERING_OUTPUT_FILE_PATH           := {ORDERING_REFINING::CONVERT_ORDERING_OUTPUT_PREFIX}.ordering
+ORDER_REFINING_SCRIPT                       := /Ordering/orderRefining.py
+ORDERING_LIST_OUTPUT_FILE_PATH              := {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}_OrdScafs
+ORDERING_GAPS_OUTPUT_FILE_PATH              := {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}_OrdScafs.gaps
+OLD_UNORDERED_SEQ                           := {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newScafSeq
+NEW_UNORDERED_SEQ                           := {ORDERING_REFINING::CONVERT_ORDERING_OUTPUT_PREFIX}.unorderedScaffolds.fasta
+ORDER_REFINING_OUTPUT_FILES_PREFIX          := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splited
+ORDER_REFINING_OUTPUT_LOG_FILE              := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.refine.log
+#If reference genome does not exist, set RUN_SPLIT_CHIMERIC_MAPS_FLAG = 0
+RUN_SPLIT_CHIMERIC_MAPS_FLAG	            := 0
+SPLIT_CHIMERIC_MAPS_SCRIPT                  := /Ordering/splitChimericMaps2.py
+#Dbgas options
+SPLIT_SCAFFOLDS_INPUT := {GENERAL::SPLIT_SCAFFOLDS_INPUT}
+MAX_GAP_RATIO                                := 1
+MIN_CLUSTER_SIZE			    := 10000
+CLUSTER_COVERAGE_THRESH			    := 0.7
+PARTITION_PERCENTAGE_THRESH		    := 0.9
+SIZE_DECREASE_RATIO		            := 0.01
+HASH_SIZE				    := 300000001
+# Boolean: if for some reason, links file doesn't exist, set HAS_LINKS:=0
+HAS_LINKS                                   := 1
+DBGAS_SLEEP_TIME                            := {INPUT::DBGAS_SLEEP_TIME}
+SPLITED_ORDERING                            := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splited.ordering
+SPLIT_CHIMERIC_LOG_FILE                     := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splitChimera.log
+CONSENSUS_FINDING_PREF			    := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+OLD_ORDERED_SCAF_GAP_FILE                   := {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newOrdScafGap
+OLD_UNORDERED_SCAF_GAP_FILE		    := {SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newScafGap
+LINKS_FILE				    := {SCAFFOLDING::OUT_LINKS_FILE}
+SPLIT_CHIMERIC_NEG_LINK_PREC		    := 0.35
+ORDERING_REFINING_FILE_PREF		    := {ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.ordering
+KMER_SIZE				    := {INPUT::KMER}
+KMER_FOR_REFERENCE_COMPARISON	            := {INPUT::KMER_FOR_REFERENCE_COMPARISON}
+NEG_LINK_PREC				    := 0.35
+NUM_THREADS				    := {GENERAL::PARALLEL_PHASES}
+MAX_GAP_SIZE_ERROR                          := 1200
+MAX_DEPTH				    := 6
+MAX_NODES				    := 10000
+# 0 represents no limit
+MAX_SCAF_CONNECTIONS                        := 0
+ADD_TIPS_ARC				    := 0
+MIDDLE_PUSHES                               := 1
+TIPS_SIZE_BOUND                             := 0
+DISCONNECT_NON_UNIQUES                      := 0
+CONTIG_TRAVEL                               := 2
+REMOVE_DUPS                                 := 1
+ADD_MISSING                                 := 1
+SMALL_SCAFS_BOUND                           := 1000
+# Should be 1 for heterozygotes
+USE_HOMO_SUPPORT                            := 1
+
+FILL_GAPS_CONFIGURATION_FILE		    := {ORDERING_REFINING::PROD_DIR}/fg_config
+EXTENDED_FILL_GAPS_CONFIGURATION_FILE       := {ORDERING_REFINING::PROD_DIR}/fg_extended_config
+CREATE_FILL_GAPS_CONFIGURATION_SCRIPT	    := {GENERAL::DENOVO-2_BIN_DIR}/createFillGapsConfiguration.pl
+
+CONSENSUS_FILE                              := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}.consensus.filled
+PRINT_ORDERED_SEQUENCES_SCRIPT              := /Utilities/printOrderedSequences.py
+PRINT_STATS_SCRIPT                          := /Ordering/printStats.py
+
+
+#QA Parameters
+CREATE_HISTOGRAMS_SCRIPT                    := {GENERAL::DENOVO-2_BIN_DIR}/QA/collectOrderingRefiningStats.pl
+HISTOGRAMS_INPUT_FILE_PATH                  := {ORDERING_REFINING::LOGS_DIR}/fillGaps.out
+WITHOUT_TIPS_HIST_OUTPUT_FILE_NAME          := gcContentWithoutTips.tsv
+WITH_TIPS_HIST_OUTPUT_FILE_NAME             := gcContentWithTips.tsv
+ALL_HIST_OUTPUT_FILE_NAME		    := gcContentHistogram.tsv
+HTML_OUTPUT_FILE                            := {ORDERING_REFINING::QA_DIR}/{GENERAL::VARIANT}.OrderingRefining.html
+WRITE_PARAMS_SCRIPT                         := {GENERAL::DENOVO-2_BIN_DIR}/QA/writeOrderingRefiningParams.pl
+PARAMS_OUT_FILE                             := {ORDERING_REFINING::QA_DIR}/orederingRefiningParams
+ENABLE_NOTIFICATIONS                        := {GENERAL::ENABLE_NOTIFICATIONS}
+
+RUN_FIX_LOCAL_TRANSLOCATIONS_FLAG           := 1
+CREATE_FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createFixLocalTranslocationsConfiguration.py
+FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_FILE := fix_local_translocations.properties
+UNIQUES_FILE                                := {ORDERING::UV_FILE}
+FIX_LOCAL_TRANSLOCATIONS_KEYWORD            := flt
+CREATE_RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_SCRIPT := {GENERAL::DENOVO-2_BIN_DIR}/createReconstructUnorderedScaffoldsConfiguration.py
+RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_FILE := reconstruct_unordered_scaffolds.properties
+RECONSTRUCT_UNORDERED_SCAFFOLDS_KEYWORD     := rus
+
+TEN_X                                   := {GENERAL::TEN_X}
+# RUN_CONNECTOR should typically 1 for homozygote with 10x and 0 otherwise
+RUN_CONNECTOR                           := 0
+# 0 means adjust number of scaffolds according to memory
+NUM_SCAFFOLDS                           := 0
+MAPPER_SE_TEN_X_OUTPUT                  := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+CONSENSUS_FINDING_APPS_CONTIG_INDEX     := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}Apps.ContigIndex
+CONSENSUS_FINDING_OUT_PRE               := {CONSENSUS_FINDING::OUT_PRE}
+HOMOLOGOUS_FILE                         := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}.homologous
+SG2F_CONFIG_FILE                        := {ORDERING_REFINING::PROD_DIR}/sg2f_config
+
+######################################
+[UNPHASED_SIMULATED_CONSENSUS_FINDING]
+######################################
+UNPHASED_SIMULATED_CONSENSUS_FINDING_DIR_SUFFIX  := UnphasedSimConsensusFinding
+PROD_DIR                                         := {GENERAL::OUT_DIR}/{UNPHASED_SIMULATED_CONSENSUS_FINDING::UNPHASED_SIMULATED_CONSENSUS_FINDING_DIR_SUFFIX}
+LOGS_DIR                                         := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/logs
+
+OUT_PREF                                         := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+CON_PRE		                                 := {CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+
+KMER_SIZE                                        := {INPUT::KMER}
+
+TEN_X                                            := {GENERAL::TEN_X}
+
+TEN_X_NUM_THREADS                                := {GENERAL::PARALLEL_PHASES}
+
+
+HOMOLOGOUS_KMER                                  := {CONSENSUS_FINDING::HOMOLOGOUS_KMER}
+TEN_X_ADD_TIPS_ARCS                              := {CONSENSUS_FINDING::TEN_X_ADD_TIPS_ARCS}
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG                := {CONSENSUS_FINDING::TEN_X_MAX_NUM_BARCODES_FOR_CONTIG}
+TEN_X_MAX_LINK_DIST                              := {CONSENSUS_FINDING::TEN_X_MAX_LINK_DIST}
+TEN_X_MAX_DEPTH                                  := {CONSENSUS_FINDING::TEN_X_MAX_DEPTH}
+TEN_X_MIN_ACCEPT_RATIO                           := {CONSENSUS_FINDING::TEN_X_MIN_ACCEPT_RATIO}
+TEN_X_MIN_ACCEPT_COUNT                           := {CONSENSUS_FINDING::TEN_X_MIN_ACCEPT_COUNT}
+TEN_X_MAX_CONNECTIONS                            := {CONSENSUS_FINDING::TEN_X_MAX_CONNECTIONS}
+TEN_X_MAX_SCAF_CONNECTIONS                       := {CONSENSUS_FINDING::TEN_X_MAX_SCAF_CONNECTIONS}
+TEN_X_MAX_LOOPS                                  := {CONSENSUS_FINDING::TEN_X_MAX_LOOPS}
+TEN_X_MOL_SIZE                                   := {CONSENSUS_FINDING::TEN_X_MOL_SIZE}
+TEN_X_SECOND_CHANCE_INV_PROB                     := {CONSENSUS_FINDING::TEN_X_SECOND_CHANCE_INV_PROB}
+TEN_X_PEAK_PRECENTAGE                            := {CONSENSUS_FINDING::TEN_X_PEAK_PRECENTAGE}
+TEN_X_HIT_PROB_REDUCE_FACTOR                     := {CONSENSUS_FINDING::TEN_X_HIT_PROB_REDUCE_FACTOR}
+TEN_X_BOUND43_COMMON_BARCODES                    := {CONSENSUS_FINDING::TEN_X_BOUND43_COMMON_BARCODES}
+TEN_X_NOISE_REDUCTION_AMOUNT                     := {CONSENSUS_FINDING::TEN_X_NOISE_REDUCTION_AMOUNT}
+CREATE_TEN_X_CONSENSUS_CONFIGURATION_SCRIPT      := {CONSENSUS_FINDING::CREATE_TEN_X_CONSENSUS_CONFIGURATION_SCRIPT}
+
+# Use 0 when there are not any big haploid regions
+ADD_BIG_GROUP_UNIQUES                            := 1
+# Use 0 when the heterozyocity is strong
+CON_SCAFS                                        := 1
+
+MAX_HOMO_APPS                                    := 5
+HOMOLOGOUS_CVG_BOUND                             := 8
+INPUT_DIP_SCAFFOLDS_SCAF_GAP                     := {ORDERING_REFINING::OUT_PREF}.orderedScaffolds.ScafGap
+MAPPER_SE_TEN_X_OUTPUT                           := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+
+################
+[HAPLOID_LINKER]
+################
+LINKER_DIR_SUFFIX		        := HaploidLinker
+PROD_DIR                                := {GENERAL::OUT_DIR}/{HAPLOID_LINKER::LINKER_DIR_SUFFIX}
+LOGS_DIR                                := {HAPLOID_LINKER::PROD_DIR}/logs
+QA_DIR					:= {HAPLOID_LINKER::PROD_DIR}/QA
+
+LINKER_SCRIPT                           := {LINKER::LINKER_SCRIPT}
+NAME_PREFIX 				:= {LINKER::NAME_PREFIX}
+MAPPER_LINKS_INPUT_DIR                  := {LINKER::MAPPER_LINKS_INPUT_DIR}
+MAPPER_OUTPUT_FILE_SUFFIX		:= {LINKER::MAPPER_OUTPUT_FILE_SUFFIX}
+LINKER_INPUT_FILES_PREFIX               := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+LINKER_OUTPUT_FILES_SUFFIX		:= {LINKER::LINKER_OUTPUT_FILES_SUFFIX}
+LINKS_FILE				:= {HAPLOID_LINKER::PROD_DIR}/{INPUT::NAME_PREFIX}{HAPLOID_LINKER::LINKER_OUTPUT_FILES_SUFFIX}
+READS_CONF				:= {LINKER::READS_CONF}
+KMER_SIZE				:= {LINKER::KMER_SIZE}
+FORBIDDEN_INSERT_SIZE_FILE              := {HAPLOID_LINKER::PROD_DIR}/forbiddenInsertSize.txt
+REMOVE_DUPLICATES			:= {LINKER::REMOVE_DUPLICATES}
+
+CREATE_PHASING_FILE_SCRIPT              := {LINKER::CREATE_PHASING_FILE_SCRIPT}
+PHASING_FILE_PATH                       := {HAPLOID_LINKER::PROD_DIR}/phasingSummary.txt
+#QA Parameters
+PARAMETERS_FILE_FOR_QA			:= {HAPLOID_LINKER::PROD_DIR}/parameterForQA.txt
+COLLECT_LINKER_STATS_SCRIPT             := {LINKER::COLLECT_LINKER_STATS_SCRIPT}
+STATISTICS_OUTPUT_FILE_NAME             := {HAPLOID_LINKER::QA_DIR}/{GENERAL::VARIANT}.linkerQA
+CREATE_HISTOGRAM_SCRIPT			:= {LINKER::CREATE_HISTOGRAM_SCRIPT}
+INPUT_STATS_FILES_NAMES_SUFFIX          := {LINKER::INPUT_STATS_FILES_NAMES_SUFFIX}
+HISTOGRAM_FILE_NAME_SUFFIX		:= {LINKER::HISTOGRAM_FILE_NAME_SUFFIX}
+LINKER_SE_LIBS_HISTOGRAM_OUT_FILE       := {HAPLOID_LINKER::QA_DIR}/SE_histogram.tsv
+LINKER_MP_LIBS_HISTOGRAM_OUT_FILE	:= {HAPLOID_LINKER::QA_DIR}/MP_histogram.tsv
+HTML_OUTPUT_FILE                        := {HAPLOID_LINKER::QA_DIR}/{GENERAL::VARIANT}.Linker.html
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+RUN_LINKS_AMPLIFICATION                 := {LINKER::RUN_LINKS_AMPLIFICATION}
+CREATE_LINKS_AMPLIFICATION_CONFIGURATION_SCRIPT := {LINKER::CREATE_LINKS_AMPLIFICATION_CONFIGURATION_SCRIPT}
+LINKS_AMPLIFICATION_CONFIGURATION_FILE  := {LINKER::LINKS_AMPLIFICATION_CONFIGURATION_FILE}
+MAX_HOMO_APPS                           := {LINKER::MAX_HOMO_APPS}
+MAX_SCORE                               := {LINKER::MAX_SCORE}
+MOL_SIZE                                := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_MOL_SIZE}
+SECOND_CHANCE_INV_PROB                  := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_SECOND_CHANCE_INV_PROB}
+PEAK_PRECENTAGE                         := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_PEAK_PRECENTAGE}
+HIT_PROB_REDUCE_FACTOR                  := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_HIT_PROB_REDUCE_FACTOR}
+BOUND43_COMMON_BARCODES                 := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_BOUND43_COMMON_BARCODES}
+NOISE_REDUCTION_AMOUNT                  := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_NOISE_REDUCTION_AMOUNT}
+HASH_SIZE                               := {LINKER::HASH_SIZE}
+UNIQUES_AMPLIFY                         := {LINKER::UNIQUES_AMPLIFY}
+HOMO2DIP_AMPLIFY                        := {LINKER::HOMO2DIP_AMPLIFY}
+HOMO2HOMO_AMPLIFY                       := {LINKER::HOMO2HOMO_AMPLIFY}
+HOMOLOGOUS_AMPLIFY                      := {LINKER::HOMOLOGOUS_AMPLIFY}
+HOMOS_INSERT_BOUND                      := {LINKER::HOMOS_INSERT_BOUND}
+HOMOLOGOUS_INSERT_BOUND                 := {LINKER::HOMOLOGOUS_INSERT_BOUND}
+HOMOLOGOUS_CVG_BOUND                    := {LINKER::HOMOLOGOUS_CVG_BOUND}
+HOMOLOGOUS_FILTER_BOUND                 := {LINKER::HOMOLOGOUS_FILTER_BOUND}
+NEG_LINK_BOUND                          := {LINKER::NEG_LINK_BOUND}
+AMP_NO_LINKER                           := {LINKER::AMP_NO_LINKER}
+FAST_MODE                               := {LINKER::FAST_MODE}
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG       := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_MAX_NUM_BARCODES_FOR_CONTIG}
+LINKS_AMPLIFICATION_KEYWORD             := {LINKER::LINKS_AMPLIFICATION_KEYWORD}
+MAPPER_SE_TEN_X_OUTPUT                  := {LINKER::MAPPER_SE_TEN_X_OUTPUT}
+NUM_THREADS                             := {GENERAL::PARALLEL_PHASES}
+
+TEN_X                                   := {GENERAL::TEN_X}
+
+
+#####################
+[HAPLOID_SCAFFOLDING]
+#####################
+SCAFFOLDING_DIR_SUFFIX	                := HaploidScaffolding
+PROD_DIR                                := {GENERAL::OUT_DIR}/{HAPLOID_SCAFFOLDING::SCAFFOLDING_DIR_SUFFIX}
+LOGS_DIR				:= {HAPLOID_SCAFFOLDING::PROD_DIR}/logs
+
+SCAFFOLDING_CONFIGURATION		:= {HAPLOID_SCAFFOLDING::PROD_DIR}/ls_configuration
+
+#Configuration Params
+CON_PRE					:= {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+LINKS_FILE				:= {HAPLOID_LINKER::LINKS_FILE}
+MATLAB_OUT_PRE				:= {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+KMER_SIZE				:= {SCAFFOLDING::KMER_SIZE}
+NUM_THREADS				:= {GENERAL::PARALLEL_PHASES}
+MIN_LINK_COUNT				:= {SCAFFOLDING::MIN_LINK_COUNT}
+MIN_LINK_DIST				:= {SCAFFOLDING::MIN_LINK_DIST}
+MAX_DEPTH				:= {SCAFFOLDING::MAX_DEPTH}
+MIN_ACCEPT_COUNT			:= {SCAFFOLDING::MIN_ACCEPT_COUNT}
+MAX_CONNECTIONS                         := {SCAFFOLDING::MAX_CONNECTIONS}
+# 0 represents no limit
+MAX_SCAF_CONNECTIONS                    := {SCAFFOLDING::MAX_SCAF_CONNECTIONS}
+MIN_ACCEPT_RATIO			:= {SCAFFOLDING::MIN_ACCEPT_RATIO}
+GOOD_COUNT_TRY				:= {SCAFFOLDING::GOOD_COUNT_TRY}
+MAX_LOOPS				:= {SCAFFOLDING::MAX_LOOPS}
+MAX_LINK_DIST				:= {SCAFFOLDING::MAX_LINK_DIST}
+INSERT_JUMP  				:= {SCAFFOLDING::INSERT_JUMP}
+#Flag: default is 0
+CREATE_GRAPH_FROM_LINKS			:= {SCAFFOLDING::CREATE_GRAPH_FROM_LINKS}
+LR_CREATE_GRAPH_FROM_LINKS              := {SCAFFOLDING::LR_CREATE_GRAPH_FROM_LINKS}
+ADD_TIPS_ARC				:= {SCAFFOLDING::ADD_TIPS_ARC}
+#Flag: default is 0
+ADD_TIPS_LINKS                          := {SCAFFOLDING::ADD_TIPS_LINKS}
+#Flag: default is 1
+FIND_ALTERNATIVE			:= {SCAFFOLDING::FIND_ALTERNATIVE}
+PHASHING_FILE				:= {HAPLOID_LINKER::PHASING_FILE_PATH}
+
+SCAF_TO_ORD_SCRIPT                      := {SCAFFOLDING::SCAF_TO_ORD_SCRIPT}
+SCAF_TO_ORD_CONFIGURATION_FILE          := {HAPLOID_SCAFFOLDING::PROD_DIR}/scaf2ord_config
+SCAF_TO_ORD_INPUT_FILES                 := {HAPLOID_SCAFFOLDING::MATLAB_OUT_PRE}
+SCAF_TO_ORD_OUTPUT_FILES                := {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SCAF_TO_ORD_SOAP_FILES_PREFIX           := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SCAF_TO_ORD_KMER_SIZE                   := {SCAFFOLDING::SCAF_TO_ORD_KMER_SIZE}
+
+CREATE_SCAFFOLDING_CONF_SCRIPT		:= {SCAFFOLDING::CREATE_SCAFFOLDING_CONF_SCRIPT}
+CREATE_CONFIGURATION_SCRIPT		:= {SCAFFOLDING::CREATE_CONFIGURATION_SCRIPT}
+
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+CREATE_LINKS_SCRIPT                     := {SCAFFOLDING::CREATE_LINKS_SCRIPT}
+OUT_LINKS_FILE                          := {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}{LINKER::LINKER_OUTPUT_FILES_SUFFIX}
+PHASING_FILE_PATH                       := {HAPLOID_SCAFFOLDING::PROD_DIR}/phasingSummary.txt
+LONG_READS                              := {GENERAL::LONG_READS}
+LONG_READS_FILE                         := {INPUT::LONG_READS_FILE}
+INDEX_FOLDER                            := {SCAFFOLDING::INDEX_FOLDER}
+SAMTOOLS                                := {SOFTWARE::SAMTOOLS_PATH}
+PARSE_SAM                               := {SOFTWARE::PARSE_SAM_PATH}
+MINI_MAP_TOOL                           := {SOFTWARE::MINIMAP_PATH}
+MINI_MAP_FLAGS                          := {SCAFFOLDING::MINI_MAP_FLAGS}
+# minimum mapping score to take
+MIN_SCORE                               := {SCAFFOLDING::MIN_SCORE}
+# phase in ordering where the long reads links begin
+LONG_READS_PHASE                        := {SCAFFOLDING::LONG_READS_PHASE}
+# Flag, use multiplication of TENX*long reads links, switch to 1 when there are no MP
+MULT_MODE                               := {SCAFFOLDING::MULT_MODE}
+# Used only if there are long reads also
+MAPPER_SE_TEN_X_OUTPUT                  := {SCAFFOLDING::MAPPER_SE_TEN_X_OUTPUT}
+# Index for the first command to be executed in the long reads links created python script 
+FIRST_COMMAND                           := 0
+
+
+##################
+[HAPLOID_ORDERING]
+##################
+ORDERING_DIR_SUFFIX                  	:= HaploidOrdering
+PROD_DIR                                := {GENERAL::OUT_DIR}/{HAPLOID_ORDERING::ORDERING_DIR_SUFFIX}
+LOGS_DIR                                := {HAPLOID_ORDERING::PROD_DIR}/logs
+
+ORDERING_MAIN_SCRIPT			:= {ORDERING::ORDERING_MAIN_SCRIPT}
+
+SOAP_FILE_PREFIX			:= {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+KMER_LENGTH				:= {ORDERING::KMER_LENGTH}
+LINKS_FILE				:= {HAPLOID_SCAFFOLDING::OUT_LINKS_FILE}
+
+#boolean 1/0
+RESUME_PARAM				:= {ORDERING::RESUME_PARAM}
+RESUME_FILE				:= {ORDERING::RESUME_FILE}
+SCAFFOLDING_OUT_FILE			:= {HAPLOID_SCAFFOLDING::SCAF_TO_ORD_OUTPUT_FILES}_1_1.scafdata.mat
+#boolean 1/0
+REPLACE_LENS				:= {ORDERING::REPLACE_LENS}
+# list of sizes we want to replace
+LENS_REPLACED				:= {ORDERING::LENS_REPLACED}
+# same size as the previous with the new lengths of the links libs.same size as the previous with the new lengths of the links libs.
+NEW_LENS				:= {ORDERING::NEW_LENS}
+SCAFF_LEN_CUTOFF			:= {ORDERING::SCAFF_LEN_CUTOFF}
+OUTPUT_PREFIX				:= {HAPLOID_ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}
+#boolean 1/0
+FILT_UN_FILT_LIBRARY_PAIRS		:= {ORDERING::FILT_UN_FILT_LIBRARY_PAIRS}
+#boolean 1/0
+LOAD_UV					:= {ORDERING::LOAD_UV}
+# name of file of the unique vector
+UV_FILE					:= {ORDERING::UV_FILE}
+ADD_TIPS_CUTOFF				:= {ORDERING::ADD_TIPS_CUTOFF}
+MIN_ARC_COV				:= {ORDERING::MIN_ARC_COV}
+MUST_BE_UNIQUE_LENGTH			:= {ORDERING::MUST_BE_UNIQUE_LENGTH}
+#boolean 1/0
+USE_CVG					:= {ORDERING::USE_CVG}
+# number of ordering phases
+N_PHASES				:= {ORDERING::N_PHASES}
+MIN_PE_COV				:= {ORDERING::MIN_PE_COV}
+TAKE_NO_LINKER_MATE_DIST_FROM_SCAFOLD_EDGE := {ORDERING::TAKE_NO_LINKER_MATE_DIST_FROM_SCAFOLD_EDGE}
+NEG_LINKS_BOUND				:= {ORDERING::NEG_LINKS_BOUND}
+NEG_LINKS_PREC				:= {ORDERING::NEG_LINKS_PREC}
+NO_SUP					:= {ORDERING::NO_SUP}
+#boolean 1/0
+DISCARD_LINKS_BETWEEN_NON_UNIQUES       := {ORDERING::DISCARD_LINKS_BETWEEN_NON_UNIQUES}
+LOW_COV_PE				:= {ORDERING::LOW_COV_PE}
+PHASE_PE_COV				:= {ORDERING::PHASE_PE_COV}
+TAKE_LINK_RATIO                         := {ORDERING::TAKE_LINK_RATIO}
+MIN_TAKE_LINK				:= {ORDERING::MIN_TAKE_LINK}
+N_CPUS					:= {ORDERING::N_CPUS}
+MIN_SEED_SIZE				:= {ORDERING::MIN_SEED_SIZE}
+#boolean 1/0
+BRIDGE_GAPS 				:= {ORDERING::BRIDGE_GAPS}
+UNORD_SCAF_DIR				:= {HAPLOID_SCAFFOLDING::PROD_DIR}
+UNORD_PREFIX				:= {ORDERING::UNORD_PREFIX}
+PHASING_FILE				:= {HAPLOID_SCAFFOLDING::PHASING_FILE_PATH}
+ORDERING_CONFIGURATION_FILE		:= {HAPLOID_ORDERING::PROD_DIR}/ordering_config
+
+CREATE_CONFIGURATION_SCRIPT		:= {ORDERING::CREATE_CONFIGURATION_SCRIPT}
+ENABLE_NOTIFICATIONS                    := {GENERAL::ENABLE_NOTIFICATIONS}
+
+TEN_X                                   := {GENERAL::TEN_X}
+TEN_X_ONLY                              := 0
+
+CREATE_TEN_X_ORDERING_CONFIGURATION_SCRIPT := {ORDERING::CREATE_TEN_X_ORDERING_CONFIGURATION_SCRIPT}
+TEN_X_ORDERING_CONFIGURATION_FILE       := {ORDERING::TEN_X_ORDERING_CONFIGURATION_FILE}
+TEN_X_ORDERING_SCRIPT                   := {ORDERING::TEN_X_ORDERING_SCRIPT}
+MAPPER_SE_TEN_X_OUTPUT                  := {ORDERING::MAPPER_SE_TEN_X_OUTPUT}
+TEN_X_UNIQUE_APPS_VAL                   := {ORDERING::TEN_X_UNIQUE_APPS_VAL}
+TEN_X_SUP_CONTIG_WIN                    := {ORDERING::TEN_X_SUP_CONTIG_WIN}
+MAX_TEN_X_MOL_LEN                       := {ORDERING::MAX_TEN_X_MOL_LEN}
+TEN_X_CONTIG_LEN_JUMP                   := {ORDERING::TEN_X_CONTIG_LEN_JUMP}
+TEN_X_MIN_ORDER_SCAF_LEN                := {ORDERING::TEN_X_MIN_ORDER_SCAF_LEN}
+TEN_X_GAP                               := {ORDERING::TEN_X_GAP}
+TEN_X_IS_ENFORCE_ORDERING_CONNECTION    := {ORDERING::TEN_X_IS_ENFORCE_ORDERING_CONNECTION}
+TEN_X_SINGLE_LINK_TH                    := {ORDERING::TEN_X_SINGLE_LINK_TH}
+TEN_X_MUT_LINK_TH                       := {ORDERING::TEN_X_MUT_LINK_TH}
+TEN_X_LARGEMAT_DUP_TH                   := {ORDERING::TEN_X_LARGEMAT_DUP_TH}
+TEN_X_LARGEMAT_DUP_BLOCK                := {ORDERING::TEN_X_LARGEMAT_DUP_BLOCK}
+TEN_X_BUBBLE_COAPPEAR_TH                := {ORDERING::TEN_X_BUBBLE_COAPPEAR_TH}
+TEN_X_MAX_APPS_VAL                      := {ORDERING::TEN_X_MAX_APPS_VAL}
+TEN_X_MIN_CONTIG_COAPPEAR               := {ORDERING::TEN_X_MIN_CONTIG_COAPPEAR}
+TEN_X_MATLAB_NUM_THREADS                := {GENERAL::MATLAB_PARALLEL_PHASES}
+TEN_X_MAX_NUM_BARCODES_FOR_CONTIG       := {UNPHASED_SIMULATED_CONSENSUS_FINDING::TEN_X_MAX_NUM_BARCODES_FOR_CONTIG}
+TEN_X_ORDERING_EDGE_LEN_FACTOR                          := {ORDERING::TEN_X_ORDERING_EDGE_LEN_FACTOR}
+TEN_X_ORDERING_MINIMAL_SCAFS_LEN_FOR_SECOND_ORDERING    := {ORDERING::TEN_X_ORDERING_MINIMAL_SCAFS_LEN_FOR_SECOND_ORDERING}
+TEN_X_ORDERING_IS_SECOND_ORDERING                       := {ORDERING::TEN_X_ORDERING_IS_SECOND_ORDERING}
+TEN_X_ORDERING_IS_FILTER_LINKS_BETWEEN_HOM_SCAFFOLDS    := {ORDERING::TEN_X_ORDERING_IS_FILTER_LINKS_BETWEEN_HOM_SCAFFOLDS}
+TEN_X_ORDERING_HOM_SCAFFOLD_FILENAME                    := {ORDERING::TEN_X_ORDERING_HOM_SCAFFOLD_FILENAME}
+# Value of 1 (or above) means no breaking scaffolds according to tenX, the lower the value, the more breaks will occur, normal value is 0.0002
+TEN_X_QA_MIN_PVAL                                       := {ORDERING::TEN_X_QA_MIN_PVAL}
+
+
+###########################
+[HAPLOID_ORDERING_REFINING]
+###########################
+ORDERING_REFINING_DIR_SUFFIX                := HaploidOrderingRefining
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{HAPLOID_ORDERING_REFINING::ORDERING_REFINING_DIR_SUFFIX}
+LOGS_DIR                                    := {HAPLOID_ORDERING_REFINING::PROD_DIR}/logs
+QA_DIR					    := {HAPLOID_ORDERING_REFINING::PROD_DIR}/QA
+# REFERENCE_INPUT is one of REFERENCE_GENOME | REFERENCE_GENOME_GRAPH_FOLDER
+REFERENCE_INPUT                             := {ORDERING_REFINING::REFERENCE_INPUT}
+# REFERENCE_TYPE is one of graphFolder (for REFERENCE_GENOME_GRAPH_FOLDER) | fasta (for REFERENCE_GENOME) | offset (for REFERENCE_GENOME)
+REFERENCE_TYPE                              := {ORDERING_REFINING::REFERENCE_TYPE}
+OUT_PREF			            := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}
+SOAP_FILE_PATH_PREFIX                       := {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+ORDERING_CONFIGURATION_FILE                 := {HAPLOID_ORDERING::ORDERING_CONFIGURATION_FILE}
+SCAFF_OUTPUT_FILE_PATH                      := {HAPLOID_ORDERING::SCAFFOLDING_OUT_FILE}
+CONVERT_ORDERING_OUTPUT_PREFIX              := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.in
+CONVERT_ORDERING_OUTPUT_SCRIPT              := {ORDERING_REFINING::CONVERT_ORDERING_OUTPUT_SCRIPT}
+CONVERT_ORDERING_OUTPUT_FILE_PATH           := {HAPLOID_ORDERING_REFINING::CONVERT_ORDERING_OUTPUT_PREFIX}.ordering
+ORDER_REFINING_SCRIPT                       := {ORDERING_REFINING::ORDER_REFINING_SCRIPT}
+ORDERING_LIST_OUTPUT_FILE_PATH              := {HAPLOID_ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}_OrdScafs
+ORDERING_GAPS_OUTPUT_FILE_PATH              := {HAPLOID_ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}_OrdScafs.gaps
+OLD_UNORDERED_SEQ                           := {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newScafSeq
+NEW_UNORDERED_SEQ                           := {HAPLOID_ORDERING_REFINING::CONVERT_ORDERING_OUTPUT_PREFIX}.unorderedScaffolds.fasta
+ORDER_REFINING_OUTPUT_FILES_PREFIX          := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splited
+ORDER_REFINING_OUTPUT_LOG_FILE              := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.refine.log
+#If reference genome does not exist, set RUN_SPLIT_CHIMERIC_MAPS_FLAG = 0
+RUN_SPLIT_CHIMERIC_MAPS_FLAG	            := 0
+SPLIT_CHIMERIC_MAPS_SCRIPT                  := {ORDERING_REFINING::SPLIT_CHIMERIC_MAPS_SCRIPT}
+#Dbgas options
+SPLIT_SCAFFOLDS_INPUT                       := {ORDERING_REFINING::SPLIT_SCAFFOLDS_INPUT}
+MAX_GAP_RATIO                                := {ORDERING_REFINING::MAX_GAP_RATIO}
+MIN_CLUSTER_SIZE			    := {ORDERING_REFINING::MIN_CLUSTER_SIZE}
+CLUSTER_COVERAGE_THRESH			    := {ORDERING_REFINING::CLUSTER_COVERAGE_THRESH}
+PARTITION_PERCENTAGE_THRESH		    := {ORDERING_REFINING::PARTITION_PERCENTAGE_THRESH}
+SIZE_DECREASE_RATIO		            := {ORDERING_REFINING::SIZE_DECREASE_RATIO}
+HASH_SIZE				    := {ORDERING_REFINING::HASH_SIZE}
+# Boolean: if for some reason, links file doesn't exist, set HAS_LINKS:=0
+HAS_LINKS                                   := {ORDERING_REFINING::HAS_LINKS}
+DBGAS_SLEEP_TIME                            := {ORDERING_REFINING::DBGAS_SLEEP_TIME}
+SPLITED_ORDERING                            := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splited.ordering
+SPLIT_CHIMERIC_LOG_FILE                     := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.splitChimera.log
+CONSENSUS_FINDING_PREF			    := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+OLD_ORDERED_SCAF_GAP_FILE                   := {HAPLOID_ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newOrdScafGap
+OLD_UNORDERED_SCAF_GAP_FILE		    := {HAPLOID_SCAFFOLDING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newScafGap
+LINKS_FILE				    := {HAPLOID_SCAFFOLDING::OUT_LINKS_FILE}
+SPLIT_CHIMERIC_NEG_LINK_PREC		    := {ORDERING_REFINING::SPLIT_CHIMERIC_NEG_LINK_PREC}
+ORDERING_REFINING_FILE_PREF		    := {HAPLOID_ORDERING_REFINING::PROD_DIR}/{INPUT::NAME_PREFIX}.ordering
+
+KMER_SIZE				    := {ORDERING_REFINING::KMER_SIZE}
+KMER_FOR_REFERENCE_COMPARISON	            := {ORDERING_REFINING::KMER_FOR_REFERENCE_COMPARISON}
+NEG_LINK_PREC				    := {ORDERING_REFINING::NEG_LINK_PREC}
+NUM_THREADS				    := {GENERAL::PARALLEL_PHASES}
+MAX_GAP_SIZE_ERROR                          := {ORDERING_REFINING::MAX_GAP_SIZE_ERROR}
+MAX_DEPTH				    := {ORDERING_REFINING::MAX_DEPTH}
+MAX_NODES				    := {ORDERING_REFINING::MAX_NODES}
+# 0 represents no limit
+MAX_SCAF_CONNECTIONS                        := {ORDERING_REFINING::MAX_SCAF_CONNECTIONS}
+ADD_TIPS_ARC				    := {ORDERING_REFINING::ADD_TIPS_ARC}
+MIDDLE_PUSHES                               := {ORDERING_REFINING::MIDDLE_PUSHES}
+TIPS_SIZE_BOUND                             := {ORDERING_REFINING::TIPS_SIZE_BOUND}
+DISCONNECT_NON_UNIQUES                      := {ORDERING_REFINING::DISCONNECT_NON_UNIQUES}
+CONTIG_TRAVEL                               := {ORDERING_REFINING::CONTIG_TRAVEL}
+REMOVE_DUPS                                 := 0
+ADD_MISSING                                 := 0
+SMALL_SCAFS_BOUND                           := {ORDERING_REFINING::SMALL_SCAFS_BOUND}
+# Should be 1 for heterozygotes
+USE_HOMO_SUPPORT                            := {ORDERING_REFINING::USE_HOMO_SUPPORT}
+
+FILL_GAPS_CONFIGURATION_FILE		    := {HAPLOID_ORDERING_REFINING::PROD_DIR}/fg_config
+EXTENDED_FILL_GAPS_CONFIGURATION_FILE       := {HAPLOID_ORDERING_REFINING::PROD_DIR}/fg_extended_config
+CREATE_FILL_GAPS_CONFIGURATION_SCRIPT	    := {ORDERING_REFINING::CREATE_FILL_GAPS_CONFIGURATION_SCRIPT}
+
+CONSENSUS_FILE                              := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}.consensus.filled
+PRINT_ORDERED_SEQUENCES_SCRIPT              := {ORDERING_REFINING::PRINT_ORDERED_SEQUENCES_SCRIPT}
+PRINT_STATS_SCRIPT                          := {ORDERING_REFINING::PRINT_STATS_SCRIPT}
+
+#QA Parameters
+CREATE_HISTOGRAMS_SCRIPT                    := {ORDERING_REFINING::CREATE_HISTOGRAMS_SCRIPT}
+HISTOGRAMS_INPUT_FILE_PATH                  := {HAPLOID_ORDERING_REFINING::LOGS_DIR}/fillGaps.out
+WITHOUT_TIPS_HIST_OUTPUT_FILE_NAME          := {ORDERING_REFINING::WITHOUT_TIPS_HIST_OUTPUT_FILE_NAME}
+WITH_TIPS_HIST_OUTPUT_FILE_NAME             := {ORDERING_REFINING::WITH_TIPS_HIST_OUTPUT_FILE_NAME}
+ALL_HIST_OUTPUT_FILE_NAME		    := {ORDERING_REFINING::ALL_HIST_OUTPUT_FILE_NAME}
+HTML_OUTPUT_FILE                            := {HAPLOID_ORDERING_REFINING::QA_DIR}/{GENERAL::VARIANT}.OrderingRefining.html
+WRITE_PARAMS_SCRIPT                         := {ORDERING_REFINING::WRITE_PARAMS_SCRIPT}
+PARAMS_OUT_FILE                             := {HAPLOID_ORDERING_REFINING::QA_DIR}/orederingRefiningParams
+ENABLE_NOTIFICATIONS                        := {GENERAL::ENABLE_NOTIFICATIONS}
+
+RUN_FIX_LOCAL_TRANSLOCATIONS_FLAG           := {ORDERING_REFINING::RUN_FIX_LOCAL_TRANSLOCATIONS_FLAG}
+CREATE_FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_SCRIPT := {ORDERING_REFINING::CREATE_FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_SCRIPT}
+FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_FILE := {ORDERING_REFINING::FIX_LOCAL_TRANSLOCATIONS_CONFIGURATION_FILE}
+CON_PRE                                     := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}
+UNIQUES_FILE                                := {HAPLOID_ORDERING::UV_FILE}
+FIX_LOCAL_TRANSLOCATIONS_KEYWORD            := {ORDERING_REFINING::FIX_LOCAL_TRANSLOCATIONS_KEYWORD}
+CREATE_RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_SCRIPT := {ORDERING_REFINING::CREATE_RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_SCRIPT}
+RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_FILE := {ORDERING_REFINING::RECONSTRUCT_UNORDERED_SCAFFOLDS_CONFIGURATION_FILE}
+RECONSTRUCT_UNORDERED_SCAFFOLDS_KEYWORD     := {ORDERING_REFINING::RECONSTRUCT_UNORDERED_SCAFFOLDS_KEYWORD}
+
+TEN_X                                   := {GENERAL::TEN_X}
+RUN_CONNECTOR                           := 0
+# 0 means adjust number of scaffolds according to memory
+NUM_SCAFFOLDS                           := 0
+MAPPER_SE_TEN_X_OUTPUT                  := {ORDERING_REFINING::MAPPER_SE_TEN_X_OUTPUT}
+CONSENSUS_FINDING_APPS_CONTIG_INDEX     := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}Apps.ContigIndex
+CONSENSUS_FINDING_OUT_PRE               := {UNPHASED_SIMULATED_CONSENSUS_FINDING::OUT_PREF}
+HOMOLOGOUS_FILE                         := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}/{INPUT::NAME_PREFIX}.homologous
+SG2F_CONFIG_FILE                        := {HAPLOID_ORDERING_REFINING::PROD_DIR}/sg2f_config
+
+
+########
+[PHASER]
+########
+PHASER_DIR_SUFFIX                           := Phaser
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{PHASER::PHASER_DIR_SUFFIX}
+LOGS_DIR                                    := {PHASER::PROD_DIR}/logs
+MAPPER_SE_TEN_X_OUTPUT                      := {MAPPER_SE::MAPPER_SE_TEN_X_OUTPUT}
+BELIEF_PROPAGATION_FOLDER                   := {BELIEF_PROPAGATION::PROD_DIR}
+CONSENSUS_FINDING_FOLDER                    := {CONSENSUS_FINDING::PROD_DIR}
+LINKER_FOLDER                               := {SCAFFOLDING::PROD_DIR}
+ORDERING_REFINING_FOLDER                    := {ORDERING_REFINING::PROD_DIR}
+UNPHASED_SIMULATED_CONSENSUS_FINDING_FOLDER := {UNPHASED_SIMULATED_CONSENSUS_FINDING::PROD_DIR}
+HAPLOID_LINKER_FOLDER                       := {HAPLOID_SCAFFOLDING::PROD_DIR}
+HAPLOID_ORDERING_REFINING_FOLDER            := {HAPLOID_ORDERING_REFINING::PROD_DIR}
+KMER_SIZE                                   := {INPUT::KMER}
+NUM_THREADS                                 := {GENERAL::PARALLEL_PHASES}
+
+HOMOLOGOUS_BOUND                            := 0.06
+
+SPLIT_DIP                                   := 1
+SPLIT_HAP                                   := 1
+
+REFERENCE_TYPE                              := {ORDERING_REFINING::REFERENCE_TYPE}
+REFERENCE_INPUT                             := {ORDERING_REFINING::REFERENCE_INPUT}
+
+BREAK_HOMOLOGOUS_ON_HAPLOID                 := 1
+REMOVE_HOMOLOGOUS_SCAFFOLDS                 := 1
+BREAK_DIP_ON_HAP                            := 1
+
+# 0 means adjust number of scaffolds according to memory
+CONNECTOR_SCAFFOLDS1                           := 0
+CONNECTOR_SCAFFOLDS2                           := 0
+CONNECTOR_SCAFFOLDS3                           := 0
+
+# 0 is the old checked version
+HAPLOID_VERSION                                := 0
+
+# 0 means run from beginning
+FIRST_COMMAND                                  := 0
+
+
+PHASER_SCRIPT                               := {GENERAL::DENOVO-2_BIN_DIR}/phaserNew.py
+
+
+########
+[POLISH]
+########
+POLISH_DIR_SUFFIX                           := Polish
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{POLISH::POLISH_DIR_SUFFIX}
+OUTPUT_PREFIX                               := {GENERAL::VARIANT}.hap
+LOGS_DIR                                    := {POLISH::PROD_DIR}/logs
+INPUT_FILE                                  := {PHASER::PROD_DIR}/{GENERAL::VARIANT}_hap.hap_final.orderedScaffolds.fasta
+MIN_SCORE                                   := 0.55 
+MAX_POLISH_DF                               := 0.2
+ERROR_CORRECTION_FOLDER                     := {ERROR_CORRECTION::PROD_DIR}
+MIN_SHORT_READS_SIZE                        := 416
+# Flag indicating if to avoid gap bridiging which creates many files and slow on cloud
+SKIP_GAP_BRIDGE                             := 0
+NUM_THREADS                                 := {GENERAL::PARALLEL_PHASES}
+LONG_READS                                  := {GENERAL::LONG_READS}
+LONG_READS_FILE                             := {INPUT::LONG_READS_FILE}
+INDEX_FOLDER                                := {SCAFFOLDING::INDEX_FOLDER}
+SAMTOOLS                                    := {SOFTWARE::SAMTOOLS_PATH}
+PARSE_SAM                                   := {SOFTWARE::PARSE_SAM_PATH}
+MINI_MAP_TOOL                               := {SOFTWARE::MINIMAP_PATH}
+MINI_MAP_FLAGS                              := {SCAFFOLDING::MINI_MAP_FLAGS}
+SSW_TOOL                                    := {SOFTWARE::SSW_PATH}
+RACON_TOOL                                  := {SOFTWARE::RACON_PATH}
+
+# 0 means run from beginning
+FIRST_COMMAND                               := 0
+
+POLISH_SCRIPT                               := /python/fillGapsLR.py
+
+###############
+[PHASED_POLISH]
+###############
+POLISH_DIR_SUFFIX                           := PhasedPolish
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{PHASED_POLISH::POLISH_DIR_SUFFIX}
+OUTPUT_PREFIX                               := {GENERAL::VARIANT}.dip
+LOGS_DIR                                    := {PHASED_POLISH::PROD_DIR}/logs
+INPUT_FILE                                  := {PHASER::PROD_DIR}/{GENERAL::VARIANT}_dip_final.orderedScaffolds.fasta
+MIN_SCORE                                   := {POLISH::MIN_SCORE}
+MAX_POLISH_DF                               := {POLISH::MAX_POLISH_DF}
+ERROR_CORRECTION_FOLDER                     := {ERROR_CORRECTION::PROD_DIR}
+MIN_SHORT_READS_SIZE                        := {POLISH::MIN_SHORT_READS_SIZE}
+# Flag indicating if to avoid gap bridiging which creates many files and slow on cloud
+SKIP_GAP_BRIDGE                             := {POLISH::SKIP_GAP_BRIDGE}
+NUM_THREADS                                 := {GENERAL::PARALLEL_PHASES}
+LONG_READS                                  := {GENERAL::LONG_READS}
+LONG_READS_FILE                             := {INPUT::LONG_READS_FILE}
+INDEX_FOLDER                                := {SCAFFOLDING::INDEX_FOLDER}
+SAMTOOLS                                    := {SOFTWARE::SAMTOOLS_PATH}
+PARSE_SAM                                   := {SOFTWARE::PARSE_SAM_PATH}
+MINI_MAP_TOOL                               := {SOFTWARE::MINIMAP_PATH}
+MINI_MAP_FLAGS                              := {SCAFFOLDING::MINI_MAP_FLAGS}
+SSW_TOOL                                    := {SOFTWARE::SSW_PATH}
+RACON_TOOL                                  := {SOFTWARE::RACON_PATH}
+
+# 0 means run from beginning
+FIRST_COMMAND                               := 0
+
+POLISH_SCRIPT                               := {POLISH::POLISH_SCRIPT}
+
+
+#######################
+[CHROMOSOMES_CONSTRUCT]
+#######################
+CHROMOSOMES_CONSTRUCT_DIR_SUFFIX            := ChrConstruct
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{CHROMOSOMES_CONSTRUCT::CHROMOSOMES_CONSTRUCT_DIR_SUFFIX}
+LOGS_DIR                                    := {CHROMOSOMES_CONSTRUCT::PROD_DIR}/logs
+TRACKS_DIR                                  := {CHROMOSOMES_CONSTRUCT::PROD_DIR}/Tracks
+OUT_PREF                                    := {GENERAL::OUTPUT_GENOME_NAME}
+#Set value to 1 if run is not against a commonAncestor reference (panGenome may include commonAncestor as well)
+SKIP_HAPLOTYPES			    	    := 0
+#Set value to 1 if input is a constructed genome and run is made to extract haplotypes genome_map or both
+SKIP_CONSTRUCTION			    := 0
+#Set value to 1, if genome_maps for all pan variants are wanted. Elsewise will map only to first variant which should be the commonGenome if available
+MAP_TO_ALL_PAN_VARIANTS			    := 0
+#Index to reference used for haplotype extraction. leave as 0 for PanGenome with ancestral sequences. Otherwise use 1-base indexing to {GENERAL::PAN_REFERENCE_PREFIX}.variantNames
+PAN_HAPLOTYPES_REFERENCE_INDEX	            := 0
+#Index to main reference used for reference coordinates system of genome_map and haplotypes. 1-base indexing to {GENERAL::PAN_REFERENCE_PREFIX}.variantNames
+PAN_MAIN_REFERENCE_INDEX                    := 1
+NUM_OF_THREADS				    := {GENERAL::PARALLEL_PHASES}
+
+#REFERENCE_INPUT is one of {GENERAL::PAN_GENOME_PREFIX} | {GENERAL::REFERENCE_GENOME} | {GENERAL::REFERENCE_GENOME_GRAPH_FOLDER}
+REFERENCE_INPUT 			    := {GENERAL::REFERENCE_GENOME}
+#REFERENCE_TYPE is one of fasta (for GENERAL::REFERENCE_GENOME) | offset (for GENERAL::REFERENCE_GENOME) | graphFolder (for GENERAL::REFERENCE_GENOME_GRAPH_FOLDER) | pan (for GENERAL::PAN_GENOME_PREFIX)
+REFERENCE_TYPE  			    := fasta
+CREATE_REPEATS_CHR_SCRIPT		    := /FastaUtilities/concatenateSequences.py
+CHROMOSOMES_CONSTRUCT_SCRIPT                := /ChrConstruct/chrConstruct.py
+SCAFF_LEN_CUTOFF			    := {ORDERING::SCAFF_LEN_CUTOFF}
+KMER_SIZE			            := {INPUT::KMER_FOR_REFERENCE_COMPARISON}
+ORDERING_KMER_SIZE		            := {ORDERING::KMER_LENGTH}
+SMALL_SCAFFOLDS_FOR_REPEATS_CHR_FILE_NAME		    := {PHASER::PROD_DIR}/{INPUT::NAME_PREFIX}_hap.hap_final_len_less_than_1000.orderedScaffolds.fasta
+GAPS_LENGTH				    := 10
+ORDERED_SCAFFOLD_FASTA_FILE_PATH            := {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newOrdScafSeq
+
+
+USE_EXTENDED_ORDERED_SCAFFOLDS_FASTA        := 0
+ORDERING_REFINING_ORDERED_SCAFFOLDS_FASTA_FILE_PATH            := {POLISH::PROD_DIR}/{POLISH::OUTPUT_PREFIX}.polished.orderedScaffolds.fasta
+ORDERING_REFINING_EXTENDED_ORDERED_SCAFFOLDS_FASTA_FILE_PATH   := {ORDERING_REFINING::OUT_PREF}.extended.orderedScaffolds.fasta
+
+
+IGV_REF_NAME                                := {GENERAL::IGV_REFERENCE_NAME}
+REF_CHR_SIZE_FILE			    := {GENERAL::REF_CHR_SIZE_FILE}
+#Dbgas options
+SPLIT_SCAFFOLDS_INPUT := {GENERAL::SPLIT_SCAFFOLDS_INPUT}
+DBGAS_SLEEP_TIME                            := {INPUT::DBGAS_SLEEP_TIME}
+MIN_HOMOLOGY                                := 0.05
+MIN_MATCH_SIZE                              := 160
+MIN_SPAN_FRACTION                           := 0.2
+MAX_GAP_RATIO                               := 2
+MIN_VACANT_RATIO                            := 0.2
+# Change next three values to 80000001/80000000/0.9 for low coverage maize if you want to use less RAM.
+HASH_SIZE                            		    := 300000001
+EXPAND_ENTRIES                              := 300000000
+EXPAND_THRESHOLD                            := 0.7
+CHROMOSOMES_CONSTRUCT_FIRST_COMMAND_INDEX   :=
+CHROMOSOMES_CONSTRUCT_LAST_COMMAND_INDEX    :=
+#Can gets its input from ORDERING or ORDERING_REFINING
+CHROMOSOMES_CONSTRUCT_INPUT_STAGE      	    := ORDERING_REFINING
+CREATE_IGV_GENOME_SCRIPT                    := /IGVUtilities/makeIGVGenome.py
+CREATE_IGV_GENOME_NAME                      := {GENERAL::OUTPUT_GENOME_NAME}
+#values for this parameter: windowMap or interpolation (default)
+COORD_CONVERSION_MODE			    := interpolation
+ENABLE_NOTIFICATIONS                        := {GENERAL::ENABLE_NOTIFICATIONS}
+UPLOAD_TO_S3                                := {GENERAL::UPLOAD_TO_S3}
+S3_PATH_PREFIX                              := {GENERAL::S3_PATH_PREFIX}
+
+##############################
+[PHASED_CHROMOSOMES_CONSTRUCT]
+##############################
+CHROMOSOMES_CONSTRUCT_DIR_SUFFIX            := PhasedChrConstruct
+PROD_DIR                                    := {GENERAL::OUT_DIR}/{PHASED_CHROMOSOMES_CONSTRUCT::CHROMOSOMES_CONSTRUCT_DIR_SUFFIX}
+LOGS_DIR                                    := {PHASED_CHROMOSOMES_CONSTRUCT::PROD_DIR}/logs
+TRACKS_DIR                                  := {PHASED_CHROMOSOMES_CONSTRUCT::PROD_DIR}/Tracks
+OUT_PREF                                    := {GENERAL::OUTPUT_GENOME_NAME}
+#Set value to 1 if run is not against a commonAncestor reference (panGenome may include commonAncestor as well)
+SKIP_HAPLOTYPES                             := {CHROMOSOMES_CONSTRUCT::SKIP_HAPLOTYPES}
+#Set value to 1 if input is a constructed genome and run is made to extract haplotypes genome_map or both
+SKIP_CONSTRUCTION                           := {CHROMOSOMES_CONSTRUCT::SKIP_CONSTRUCTION}
+#Set value to 1, if genome_maps for all pan variants are wanted. Elsewise will map only to first variant which should be the commonGenome if available
+MAP_TO_ALL_PAN_VARIANTS                     := {CHROMOSOMES_CONSTRUCT::MAP_TO_ALL_PAN_VARIANTS}
+#Index to reference used for haplotype extraction. leave as 0 for PanGenome with ancestral sequences. Otherwise use 1-base indexing to {GENERAL::PAN_REFERENCE_PREFIX}.variantNames
+PAN_HAPLOTYPES_REFERENCE_INDEX              := {CHROMOSOMES_CONSTRUCT::PAN_HAPLOTYPES_REFERENCE_INDEX}
+#Index to main reference used for reference coordinates system of genome_map and haplotypes. 1-base indexing to {GENERAL::PAN_REFERENCE_PREFIX}.variantNames
+PAN_MAIN_REFERENCE_INDEX                    := {CHROMOSOMES_CONSTRUCT::PAN_MAIN_REFERENCE_INDEX}
+NUM_OF_THREADS                              := {GENERAL::PARALLEL_PHASES}
+
+#REFERENCE_INPUT is one of {GENERAL::PAN_GENOME_PREFIX} | {GENERAL::REFERENCE_GENOME} | {GENERAL::REFERENCE_GENOME_GRAPH_FOLDER}
+REFERENCE_INPUT                             := {CHROMOSOMES_CONSTRUCT::REFERENCE_INPUT}
+#REFERENCE_TYPE is one of fasta (for GENERAL::REFERENCE_GENOME) | offset (for GENERAL::REFERENCE_GENOME) | graphFolder (for GENERAL::REFERENCE_GENOME_GRAPH_FOLDER) | pan (for GENERAL::PAN_GENOME_PREFIX)
+REFERENCE_TYPE                              := {CHROMOSOMES_CONSTRUCT::REFERENCE_TYPE}
+CREATE_REPEATS_CHR_SCRIPT                   := {CHROMOSOMES_CONSTRUCT::CREATE_REPEATS_CHR_SCRIPT}
+CHROMOSOMES_CONSTRUCT_SCRIPT                := {CHROMOSOMES_CONSTRUCT::CHROMOSOMES_CONSTRUCT_SCRIPT}
+SCAFF_LEN_CUTOFF                            := {ORDERING::SCAFF_LEN_CUTOFF}
+KMER_SIZE                                   := {INPUT::KMER_FOR_REFERENCE_COMPARISON}
+ORDERING_KMER_SIZE                          := {ORDERING::KMER_LENGTH}
+SMALL_SCAFFOLDS_FOR_REPEATS_CHR_FILE_NAME                   := {PHASER::PROD_DIR}/{INPUT::NAME_PREFIX}_dip_final_len_less_than_1000.orderedScaffolds.fasta
+GAPS_LENGTH                                 := {CHROMOSOMES_CONSTRUCT::GAPS_LENGTH}
+ORDERED_SCAFFOLD_FASTA_FILE_PATH            := {ORDERING::PROD_DIR}/{INPUT::NAME_PREFIX}.tmp2_newOrdScafSeq
+
+
+USE_EXTENDED_ORDERED_SCAFFOLDS_FASTA        := 0
+ORDERING_REFINING_ORDERED_SCAFFOLDS_FASTA_FILE_PATH            := {PHASED_POLISH::PROD_DIR}/{PHASED_POLISH::OUTPUT_PREFIX}.polished.orderedScaffolds.fasta
+ORDERING_REFINING_EXTENDED_ORDERED_SCAFFOLDS_FASTA_FILE_PATH   := {ORDERING_REFINING::OUT_PREF}.extended.orderedScaffolds.fasta
+
+
+IGV_REF_NAME                                := {GENERAL::IGV_REFERENCE_NAME}
+REF_CHR_SIZE_FILE                           := {GENERAL::REF_CHR_SIZE_FILE}
+#Dbgas options
+SPLIT_SCAFFOLDS_INPUT := {GENERAL::SPLIT_SCAFFOLDS_INPUT}
+DBGAS_SLEEP_TIME                            := {INPUT::DBGAS_SLEEP_TIME}
+MIN_HOMOLOGY                                := {CHROMOSOMES_CONSTRUCT::MIN_HOMOLOGY}
+MIN_MATCH_SIZE                              := {CHROMOSOMES_CONSTRUCT::MIN_MATCH_SIZE}
+MIN_SPAN_FRACTION                           := {CHROMOSOMES_CONSTRUCT::MIN_SPAN_FRACTION}
+MAX_GAP_RATIO                               := {CHROMOSOMES_CONSTRUCT::MAX_GAP_RATIO}
+MIN_VACANT_RATIO                            := 0.8
+# Change next three values to 80000001/80000000/0.9 for low coverage maize if you want to use less RAM.
+HASH_SIZE                                           := {CHROMOSOMES_CONSTRUCT::HASH_SIZE}
+EXPAND_ENTRIES                              := {CHROMOSOMES_CONSTRUCT::EXPAND_ENTRIES}
+EXPAND_THRESHOLD                            := {CHROMOSOMES_CONSTRUCT:EXPAND_THRESHOLD}
+CHROMOSOMES_CONSTRUCT_FIRST_COMMAND_INDEX   :=
+CHROMOSOMES_CONSTRUCT_LAST_COMMAND_INDEX    :=
+#Can gets its input from ORDERING or ORDERING_REFINING
+CHROMOSOMES_CONSTRUCT_INPUT_STAGE           := ORDERING_REFINING
+CREATE_IGV_GENOME_SCRIPT                    := {CHROMOSOMES_CONSTRUCT::CREATE_IGV_GENOME_SCRIPT}
+CREATE_IGV_GENOME_NAME                      := {GENERAL::OUTPUT_GENOME_NAME}
+#values for this parameter: windowMap or interpolation (default)
+COORD_CONVERSION_MODE                       := {CHROMOSOMES_CONSTRUCT::COORD_CONVERSION_MODE}
+ENABLE_NOTIFICATIONS                        := {GENERAL::ENABLE_NOTIFICATIONS}
+UPLOAD_TO_S3                                := {GENERAL::UPLOAD_TO_S3}
+S3_PATH_PREFIX                              := {GENERAL::S3_PATH_PREFIX}
+
+
+####################
+[CREATE_HTML_REPORT]
+####################
+HTML_REPORT_SUFFIX			    := HTML
+PIPELINE_OUT_DIR			    := {GENERAL::OUT_DIR}
+PROD_DIR				    := {GENERAL::OUT_DIR}/{CREATE_HTML_REPORT::HTML_REPORT_SUFFIX}
+LOGS_DIR				    := {CREATE_HTML_REPORT::PROD_DIR}/logs
+
+#QA Parameters
+CREATE_ASSEMBLY_STATS_TABLE_SCRIPT	    := {GENERAL::DENOVO-2_BIN_DIR}/QA/createAssemblyStatisticsTable.V2.pl
+BP_LOG_FILE				    := {BELIEF_PROPAGATION::PROD_DIR}/logs/runBeliefPropagationMain.out
+CONSENSUS_LOG_FILE                          := {CONSENSUS_FINDING::PROD_DIR}/logs/runConsensusFindingMain.out
+SCAFFOLDING_LOG_FILE                        := {SCAFFOLDING::PROD_DIR}/logs/scaffolding_main.out
+SCAFF_TO_ORD_LOG_FILE                       := {SCAFFOLDING::PROD_DIR}/logs/scafToOrd.out
+ORDERING_LOG_FILE                           := {ORDERING::PROD_DIR}/logs/orderingMain.out
+
+USE_EXTENDED_SCAFFOLDS_STATS                := {ORDERING_REFINING::RUN_CONNECTOR}
+UNORDERED_SCAFFOLDS_STATS                    := {ORDERING_REFINING::OUT_PREF}.unorderedScaffolds.stats
+ORDERED_SCAFFOLDS_STATS                      := {ORDERING_REFINING::OUT_PREF}.orderedScaffolds.stats
+EXTENDED_UNORDERED_SCAFFOLDS_STATS           := {ORDERING_REFINING::OUT_PREF}.extended.unorderedScaffolds.stats
+EXTENDED_ORDERED_SCAFFOLDS_STATS             := {ORDERING_REFINING::OUT_PREF}.extended.orderedScaffolds.stats
+
+
+ASSEMBLY_STATS_TABLE_FILE_PATH              := {CREATE_HTML_REPORT::PROD_DIR}/assemblyTable.tsv
+ASSEMBLY_HTML_OUTPUT_FILE                   := {CREATE_HTML_REPORT::PROD_DIR}/{GENERAL::VARIANT}.AssemblyStats.html
+
+READS_PRE_PROCESSING__INPUT_QA_DIR          := {INPUT::READS_PRE_PROCESSING_INPUT_QA_DIR}
+ERROR_CORRECTION_INPUT_QA_DIR    	    := {ERROR_CORRECTION::QA_DIR}
+BELIEF_PROPAGATION_INPUT_QA_DIR		    := {BELIEF_PROPAGATION::QA_DIR}
+CONSENSUS_FINDING_INPUT_QA_DIR		    := {CONSENSUS_FINDING::QA_DIR}
+LINKER_INPUT_QA_DIR		            := {LINKER::QA_DIR}
+ORDERING_REFINING_INPUT_QA_DIR		    := {ORDERING_REFINING::QA_DIR}
+
+STAGES_HTML_FILES_STR	         	    := {CREATE_HTML_REPORT::ASSEMBLY_HTML_OUTPUT_FILE}.withoutHeader.html:{CREATE_HTML_REPORT::READS_PRE_PROCESSING__INPUT_QA_DIR}/{GENERAL::VARIANT}.ReadsPreProcessing.html.withoutHeader.html:{ERROR_CORRECTION::HTML_OUTPUT_FILE}.withoutHeader.html:{BELIEF_PROPAGATION::DBGAS_HTML_OUTPUT_FILE}.withoutHeader.html:{BELIEF_PROPAGATION::BP_HTML_OUTPUT_FILE}.withoutHeader.html:{CONSENSUS_FINDING::CONSENSUS_FINDING_HTML_OUTPUT_FILE}.withoutHeader.html:{LINKER::HTML_OUTPUT_FILE}.withoutHeader.html:{ORDERING_REFINING::HTML_OUTPUT_FILE}.withoutHeader.html
+STAGES_HEADERS_STR			    := Assembly_Statistics:Reads_Pre_Processing_Statistics:Error_Correction_Statistics:DeBruijn_Graph_Assembly_Statistics:Belief_Propagation_Statistics:Consensus_Finding_Statistics:Linking_Statistics:Ordering_Refining_Statistics
+REPORT_OUTPUT_FILE                          := {CREATE_HTML_REPORT::PROD_DIR}/{GENERAL::VARIANT}.report.html
+CREATE_REPORT_HTML_SCRIPT                   := {GENERAL::DENOVO-2_BIN_DIR}/createReportFile.pl
+PREPARE_JSON_SCRIPT			    := /HTMLScripts/V2/prepare_json.py
+HTML_V2_SCRIPT				    := /HTMLScripts/V2/generate_html_report.sh
+HTML_V2_CONDA_ENV_YML			    := /HTMLScripts/V2/conda.env.yml
+HTML_V2_IPYNB				    := /HTMLScripts/V2/html_report.ipynb
+JSON_TEMPLATE				    := /HTMLScripts/V2/configuration.json
+VARIANT_NAME				    := {GENERAL::VARIANT}
+KMER					    := {INPUT::KMER}	
+DENOVO-2_BIN_DIR			    := {GENERAL::DENOVO-2_BIN_DIR}
+SMALL_SCAFS_BOUND			    := {ORDERING_REFINING::SMALL_SCAFS_BOUND}
