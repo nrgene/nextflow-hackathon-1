@@ -8,7 +8,7 @@ DESCRIPTION 		:= Run DM2 pipeline from beginning to end on apple_3/apple, expect
 #List here all stages included in the pipeline and listed below.
 STAGES               	:= ERROR_CORRECTION:DEBRUIJN_GRAPH_ASSEMBLY:BELIEF_PROPAGATION:MAPPER_SE:CONSENSUS_FINDING:MAPPER_LINKS:LINKER:SCAFFOLDING:ORDERING:ORDERING_REFINING:UNPHASED_SIMULATED_CONSENSUS_FINDING:HAPLOID_LINKER:HAPLOID_SCAFFOLDING:HAPLOID_ORDERING:HAPLOID_ORDERING_REFINING:PHASER:POLISH:PHASED_POLISH:CHROMOSOMES_CONSTRUCT:PHASED_CHROMOSOMES_CONSTRUCT:CREATE_HTML_REPORT
 INITIAL_SUB_STAGE    	:= 1
-RUN_NUMBER           	:= 2
+RUN_NUMBER           	:= 1
 BASED_ON             	:= NULL
 
 PIPELINE             	:= denovoMagic2
@@ -1431,11 +1431,3 @@ STAGES_HEADERS_STR			    := Assembly_Statistics:Reads_Pre_Processing_Statistics:
 REPORT_OUTPUT_FILE                          := {CREATE_HTML_REPORT::PROD_DIR}/{GENERAL::VARIANT}.report.html
 CREATE_REPORT_HTML_SCRIPT                   := {GENERAL::DENOVO-2_BIN_DIR}/createReportFile.pl
 PREPARE_JSON_SCRIPT			    := /HTMLScripts/V2/prepare_json.py
-HTML_V2_SCRIPT				    := /HTMLScripts/V2/generate_html_report.sh
-HTML_V2_CONDA_ENV_YML			    := /HTMLScripts/V2/conda.env.yml
-HTML_V2_IPYNB				    := /HTMLScripts/V2/html_report.ipynb
-JSON_TEMPLATE				    := /HTMLScripts/V2/configuration.json
-VARIANT_NAME				    := {GENERAL::VARIANT}
-KMER					    := {INPUT::KMER}	
-DENOVO-2_BIN_DIR			    := {GENERAL::DENOVO-2_BIN_DIR}
-SMALL_SCAFS_BOUND			    := {ORDERING_REFINING::SMALL_SCAFS_BOUND}
